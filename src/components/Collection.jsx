@@ -1,13 +1,16 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
-import { CATEGORIES, PRODUCTS, formatPrice } from '../data/products'
+import { CATEGORIES, PRODUCTS, formatPrice, withColor, discount } from '../data/products'
 import { useCart } from '../store/cart'
 import { setTryOn, useTryOn } from '../store/tryon'
 import { FIELDS, GENDERS, useBody, setBody, setGender, resetBody, setBodyOpen, topSize, bottomSize, recommendedSize } from '../store/body'
-import { PenIcon } from './Overlays'
+import { PenIcon, FavoriteButton } from './Overlays'
+import { useFavorites, useFavoritesRequest, takeFavoritesRequest } from '../store/favorites'
 
 const CardView = lazy(() => import('../three/ProductViews').then((m) => ({ default: m.CardView })))
 const MannequinView = lazy(() => import('../three/ProductViews').then((m) => ({ default: m.MannequinView })))
+
+const FAV = 'Favorilerim'
 
 // Manken yalnızca giyilebilen (bedeni olan) ürünleri gösterir
 const wearable = (p) => !!p.sizes
@@ -133,10 +136,14 @@ function TryOn({ hidden }) {
   )
 }
 
-function ProductCard({ product, index, shown, onOpen, onCustom }) {
+function ProductCard({ product: base, index, shown, onOpen, onCustom }) {
   const { add } = useCart()
   const hovered = useRef(false)
   const ref = useRef()
+  // kartta seçilen renk: 3D model, manken ve ürün detayı bu rengi kullanır
+  const [color, setColor] = useState(base.color)
+  const product = withColor(base, color)
+  const off = discount(base)
 
   // Fareye göre hafif 3D eğim
   const onMove = (e) => {
@@ -186,21 +193,45 @@ function ProductCard({ product, index, shown, onOpen, onCustom }) {
           <div className="price">
             {formatPrice(product.price)}
             {product.oldPrice && <s>{formatPrice(product.oldPrice)}</s>}
+            {off > 0 && <em className="price__off">%{off}</em>}
           </div>
+          {base.colors && (
+            <div className="swatches" role="radiogroup" aria-label={`${base.name} rengi`}>
+              {base.colors.map(([label, hex]) => (
+                <button
+                  key={hex}
+                  type="button"
+                  role="radio"
+                  aria-checked={color === hex}
+                  aria-label={label}
+                  title={label}
+                  className={color === hex ? 'active' : ''}
+                  style={{ '--swatch': hex }}
+                  onClick={() => {
+                    setColor(hex)
+                    setTryOn(withColor(base, hex))
+                  }}
+                />
+              ))}
+            </div>
+          )}
           <button className="custom-btn" onClick={() => onCustom(product)}>
             <PenIcon /> Kişiye özel baskı
           </button>
         </div>
-        {/* Giyimde önce beden seçilsin diye ürün detayı açılır */}
-        <button
-          className="add-btn"
-          onClick={() => (product.sizes ? onOpen(product) : add(product.id))}
-          aria-label={product.sizes ? 'Beden seç ve sepete ekle' : 'Sepete ekle'}
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-        </button>
+        <div className="card__actions">
+          <FavoriteButton id={product.id} />
+          {/* Giyimde önce beden seçilsin diye ürün detayı açılır */}
+          <button
+            className="add-btn"
+            onClick={() => (product.sizes ? onOpen(product) : add(product.id))}
+            aria-label={product.sizes ? 'Beden seç ve sepete ekle' : 'Sepete ekle'}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </button>
+        </div>
       </div>
     </motion.article>
   )
@@ -210,7 +241,17 @@ export default function Collection({ onOpen, onCustom }) {
   const [cat, setCat] = useState('Tümü')
   // ilk kategori değişiminden sonra yeniden görünen kartlar CSS ile hafifçe belirir
   const [switched, setSwitched] = useState(false)
-  const list = cat === 'Tümü' ? PRODUCTS : PRODUCTS.filter((p) => p.category === cat)
+  const favs = useFavorites()
+  const favRequest = useFavoritesRequest()
+  // menüdeki kalp butonu: "Favorilerim" filtresi açılır
+  useEffect(() => {
+    if (favRequest && takeFavoritesRequest()) {
+      setCat(FAV)
+      setSwitched(true)
+    }
+  }, [favRequest])
+  const cats = favs.length || cat === FAV ? [...CATEGORIES, FAV] : CATEGORIES
+  const list = cat === 'Tümü' ? PRODUCTS : cat === FAV ? PRODUCTS.filter((p) => favs.includes(p.id)) : PRODUCTS.filter((p) => p.category === cat)
   // listede giyilebilen ürün yoksa manken alanı gizlenir, ürünler tam genişlikte dizilir.
   // Manken kaldırılmaz, yalnızca gizlenir: yeniden kurmak kategori değişiminde ekranı takıyordu
   const wide = useWide()
@@ -229,8 +270,11 @@ export default function Collection({ onOpen, onCustom }) {
             </h2>
           </div>
           <div className="filters">
-            {CATEGORIES.map((c) => (
-              <button key={c} className={c === cat ? 'active' : ''} onClick={() => {
+            {cats.map((c) => (
+              <button
+                key={c}
+                className={c === cat ? 'active' : ''}
+                onClick={() => {
                   setCat(c)
                   setSwitched(true)
                 }}
@@ -250,6 +294,7 @@ export default function Collection({ onOpen, onCustom }) {
             {PRODUCTS.map((p) => (
               <ProductCard key={p.id} product={p} index={list.indexOf(p)} shown={list.includes(p)} onOpen={onOpen} onCustom={onCustom} />
             ))}
+            {cat === FAV && !list.length && <p className="grid__empty muted">Henüz favorin yok. Beğendiğin ürünün kalbine dokun, burada görünsün.</p>}
           </div>
         </div>
       </div>

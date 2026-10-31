@@ -169,10 +169,14 @@ export function Contact() {
             <small>Çalışma saatleri</small>
             <span>{SITE.hours}</span>
           </div>
-          <div>
-            <small>Sosyal medya</small>
-            <a href={SITE.instagram}>Instagram</a>
-          </div>
+          {SITE.instagram && (
+            <div>
+              <small>Sosyal medya</small>
+              <a href={SITE.instagram} target="_blank" rel="noopener noreferrer">
+                Instagram
+              </a>
+            </div>
+          )}
           <p className="muted">
             Sık sorulan sorulara <Link to="/sss">SSS sayfamızdan</Link> hemen ulaşabilirsin.
           </p>

@@ -8,7 +8,7 @@ export const SITE = {
   whatsapp: '0532 565 42 88', // WhatsApp destek hattı, ör. '+90 5xx xxx xx xx'. Boşsa WhatsApp butonu gösterilmez
   address: 'Tokat Merkez, Türkiye',
   hours: 'Hafta içi 09:00 – 18:00',
-  instagram: '#',
+  instagram: '', // Instagram profil adresi, ör. 'https://instagram.com/zela47'. Boşsa bağlantı gösterilmez
   url: 'https://zela47.com.tr', // Sitenin yayındaki adresi (sitemap ve paylaşım görseli için). Alan adı henüz alınmadı
   analyticsId: '' // Google Analytics 4 ölçüm kimliği (ör. 'G-XXXXXXX'). Boşsa analytics ve çerez bandı kapalıdır
 }

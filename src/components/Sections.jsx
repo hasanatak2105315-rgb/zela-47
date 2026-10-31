@@ -256,7 +256,11 @@ export function Footer() {
               <h4>İletişim</h4>
               <Link to="/iletisim">İletişim formu</Link>
               <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
-              <a href={SITE.instagram}>Instagram</a>
+              {SITE.instagram && (
+                <a href={SITE.instagram} target="_blank" rel="noopener noreferrer">
+                  Instagram
+                </a>
+              )}
             </div>
           </div>
         </div>

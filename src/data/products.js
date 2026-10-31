@@ -2,7 +2,8 @@
 // model: src/three/Models.jsx içindeki modellerden biri
 // (tshirt, sweatshirt, hoodie, joggers, tracksuit; 3D baskı modelleri de duruyor ama şu an satılmıyor)
 // color = kumaş rengi, color2 = eşofman takımının altı, print = göğüsteki baskı yazısı,
-// sizes = beden seçenekleri (varsa sepete eklemeden önce beden seçilir)
+// sizes = beden seçenekleri (varsa sepete eklemeden önce beden seçilir),
+// colors = renk seçenekleri [ad, renk kodu]; ilki varsayılan renktir ve color ile aynı olmalı
 
 export const CATEGORIES = ['Tümü', 'Tişört', 'Eşofman']
 
@@ -15,6 +16,7 @@ export const PRODUCTS = [
     category: 'Tişört',
     model: 'tshirt',
     color: '#f1ece2',
+    colors: [['Krem', '#f1ece2'], ['Pompeii kırmızısı', '#b8322a'], ['Siyah', '#221c19']],
     print: 'Zela 47',
     sizes: SIZES,
     price: 449,
@@ -30,10 +32,11 @@ export const PRODUCTS = [
     category: 'Eşofman',
     model: 'joggers',
     color: '#9aa3ab',
+    colors: [['Gri melanj', '#9aa3ab'], ['Siyah', '#221c19'], ['Lacivert', '#2c4a7a']],
     sizes: SIZES,
     price: 649,
     rating: 4.7,
-    desc: 'Gri melanj, paçası lastikli jogger eşofman altı. Yanda altın sarısı şerit, belde bağcık, iki yan cep.',
+    desc: 'Paçası lastikli jogger eşofman altı. Yanda altın sarısı şerit, belde bağcık, iki yan cep.',
     specs: ['Lastikli paça', 'Bağcıklı bel', 'İki yan cep', 'Yan şerit detayı']
   },
   {
@@ -43,6 +46,7 @@ export const PRODUCTS = [
     model: 'tracksuit',
     color: '#2c4a7a',
     color2: '#2c4a7a',
+    colors: [['Lacivert', '#2c4a7a'], ['Siyah', '#221c19'], ['Bordo', '#7a2420']],
     print: 'Z47',
     sizes: SIZES,
     price: 1290,
@@ -53,6 +57,13 @@ export const PRODUCTS = [
     specs: ['Üst + alt takım', 'İçi şardonlu', 'Lastikli paça', 'Logo baskı']
   }
 ]
+
+// Seçilen renkle ürünün kopyası (3D model ve manken bu rengi giyer). Takımda üst ve alt aynı renk olur
+export const withColor = (product, color) =>
+  !color || color === product.color ? product : { ...product, color, ...(product.color2 && { color2: color }) }
+
+// Eski fiyata göre indirim yüzdesi (ör. 18)
+export const discount = (product) => (product.oldPrice ? Math.round((1 - product.price / product.oldPrice) * 100) : 0)
 
 export const formatPrice = (n) =>
   new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY', maximumFractionDigits: 0 }).format(n)

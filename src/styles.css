@@ -75,6 +75,13 @@ main, .footer { position: relative; z-index: 1; }
 /* Menü */
 .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 50; transition: background 0.5s, border-color 0.5s, backdrop-filter 0.5s; border-bottom: 1px solid transparent; }
 .nav--solid { background: color-mix(in srgb, var(--bg) 86%, transparent); backdrop-filter: blur(16px); border-color: var(--line); }
+/* Duyuru bandı: sayfa kaydırılınca kapanır */
+.topbar { height: 34px; display: grid; place-items: center; overflow: hidden; background: var(--accent); color: var(--on-accent); font-size: 0.8rem; font-weight: 600; text-align: center; padding: 0 16px; transition: height 0.35s var(--ease); }
+.nav--solid .topbar { height: 0; }
+.fav-nav { position: relative; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line-strong); display: grid; place-items: center; color: var(--text); transition: border-color 0.3s, color 0.3s; }
+.fav-nav:hover { border-color: var(--accent); color: var(--accent); }
+.fav-nav svg { width: 18px; height: 18px; }
+.fav-nav b { position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 99px; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); font-size: 0.7rem; }
 .nav__inner { display: flex; align-items: center; justify-content: space-between; height: 76px; gap: 20px; }
 .logo { display: inline-flex; white-space: nowrap; align-items: center; gap: 10px; color: var(--text); }
 .logo svg { width: 56px; height: 56px;  }
@@ -113,7 +120,7 @@ main, .footer { position: relative; z-index: 1; }
 .hero { position: relative; height: 100svh; min-height: 640px; overflow: hidden; }
 .hero__canvas { position: absolute; inset: 0; }
 .hero__shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, color-mix(in srgb, var(--bg) 85%, transparent) 0%, color-mix(in srgb, var(--bg) 35%, transparent) 45%, transparent 70%), linear-gradient(0deg, var(--bg) 0%, transparent 25%); }
-.hero__content { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: center; pointer-events: none; padding: 60px 0 90px; }
+.hero__content { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: center; pointer-events: none; padding: 94px 0 90px; }
 .hero__content > * { pointer-events: auto; max-width: 640px; }
 .hero__title { font-family: var(--font-display); font-weight: 500; font-size: clamp(3.4rem, min(8.4vw, 12vh), 8.4rem); line-height: 0.98; letter-spacing: -0.02em; }
 .reveal-line { display: block; overflow: hidden; padding: 0.1em 0.06em 0.12em 0; margin: -0.1em 0 -0.08em; }
@@ -170,6 +177,21 @@ main, .footer { position: relative; z-index: 1; }
 .price { display: flex; align-items: baseline; gap: 10px; font-weight: 600; }
 .price s { color: var(--muted); font-weight: 400; font-size: 0.85em; }
 .price--lg { font-size: 1.6rem; margin: 18px 0; }
+.price__off { align-self: center; padding: 2px 8px; border-radius: 99px; background: var(--accent); color: var(--on-accent); font-style: normal; font-size: 0.72rem; font-weight: 700; }
+.price--lg .price__off { font-size: 0.8rem; }
+.swatches { display: flex; gap: 8px; margin: 2px 0 8px; }
+.swatches button, .colors button { width: 24px; height: 24px; border-radius: 50%; background: var(--swatch); border: 1px solid var(--line-strong); transition: transform 0.2s var(--ease); }
+.swatches button:hover, .colors button:hover { transform: scale(1.12); }
+.swatches button.active, .colors button.active { outline: 2px solid var(--accent); outline-offset: 2px; }
+.card__actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+.fav-btn { flex-shrink: 0; width: 50px; height: 50px; border-radius: 50%; border: 1px solid var(--line-strong); display: grid; place-items: center; color: var(--muted); transition: color 0.3s, border-color 0.3s; }
+.fav-btn svg { width: 20px; height: 20px; }
+.fav-btn:hover, .fav-btn--on { color: var(--accent); border-color: var(--accent); }
+.fav-btn--lg { width: 52px; height: 52px; }
+.share-btn { display: inline-flex; align-items: center; gap: 8px; margin-top: 16px; font-size: 0.85rem; font-weight: 600; color: var(--muted); transition: color 0.3s; }
+.share-btn:hover { color: var(--accent); }
+.share-btn svg { width: 16px; height: 16px; }
+.grid__empty { grid-column: 1 / -1; padding: 60px 0; text-align: center; }
 .add-btn { flex-shrink: 0; width: 50px; height: 50px; border-radius: 50%; border: 1px solid var(--line-strong); display: grid; place-items: center; transition: background 0.4s var(--ease), border-color 0.4s var(--ease), color 0.4s var(--ease), box-shadow 0.4s var(--ease); }
 .add-btn svg { width: 20px; height: 20px; transition: transform 0.4s var(--ease); }
 .add-btn:hover { background: var(--accent); border-color: var(--accent); color: var(--bg); box-shadow: 0 10px 24px -12px color-mix(in srgb, var(--shadow) 40%, transparent); }
@@ -190,7 +212,8 @@ main, .footer { position: relative; z-index: 1; }
 .tryon[hidden] { display: none; }
 .tryon__stage { position: absolute; inset: 0; transition: bottom 0.35s var(--ease); }
 .tryon--edit .tryon__stage { bottom: 44%; }
-.tryon__view { position: absolute; inset: 0; }
+/* 3D alan üstteki butonların altından başlar: manken yakınlaşınca butonların üstüne binmesin */
+.tryon__view { position: absolute; inset: 88px 0 0; }
 .tryon__measure { position: absolute; top: 14px; right: 14px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 99px; border: 1px solid var(--line-strong); background: color-mix(in srgb, var(--bg) 60%, transparent); backdrop-filter: blur(8px); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); transition: border-color 0.3s, background 0.3s; }
 .tryon__measure:hover, .tryon__measure[aria-expanded='true'] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
 .tryon__measure svg { width: 16px; height: 16px; }
@@ -315,6 +338,11 @@ main, .footer { position: relative; z-index: 1; }
 .custom-cta svg, .custom-btn svg { width: 16px; height: 16px; }
 
 /* Beden ve baskı yeri seçimi */
+.colors { display: grid; gap: 8px; margin: 0 0 18px; }
+.colors > span { font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+.colors > span b { color: var(--text); letter-spacing: 0.04em; text-transform: none; font-weight: 600; margin-left: 4px; }
+.colors > div { display: flex; gap: 10px; }
+.colors button { width: 34px; height: 34px; }
 .sizes { display: grid; gap: 8px; margin: 0 0 18px; }
 .sizes > span { font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
 .sizes > div { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -436,7 +464,7 @@ main, .footer { position: relative; z-index: 1; }
   .steps { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 760px) {
-  .nav__links { position: fixed; top: 76px; left: 0; right: 0; flex-direction: column; gap: 0; padding: 10px 16px 20px; background: color-mix(in srgb, var(--bg) 96%, transparent); border-bottom: 1px solid var(--line); transform: translateY(calc(-100% - 100px)); visibility: hidden; transition: transform 0.35s var(--ease), visibility 0.35s; z-index: -1; }
+  .nav__links { position: absolute; top: 100%; left: 0; right: 0; flex-direction: column; gap: 0; padding: 10px 16px 20px; background: var(--bg); border-bottom: 1px solid var(--line); transform: translateY(calc(-100% - 100px)); visibility: hidden; transition: transform 0.35s var(--ease), visibility 0.35s; z-index: -1; }
   .nav--open .nav__links { transform: none; visibility: visible; }
   .nav--open { background: color-mix(in srgb, var(--bg) 96%, transparent); }
   .nav__links button { text-align: left; padding: 16px 0; font-size: 1rem; border-bottom: 1px solid var(--line); }

@@ -4,13 +4,13 @@ import { PRODUCTS } from '../data/products'
 const CartContext = createContext(null)
 const KEY = 'tx-cart'
 
-// Sepet satırı: aynı ürün farklı beden ya da farklı kişiye özel baskıyla ayrı satırda durur
-const lineKey = (id, size, custom) => [id, size ?? '', custom?.text ?? '', custom?.place ?? ''].join('|')
+// Sepet satırı: aynı ürün farklı beden, renk ya da kişiye özel baskıyla ayrı satırda durur
+const lineKey = (id, size, custom, color) => [id, size ?? '', custom?.text ?? '', custom?.place ?? '', color ?? ''].join('|')
 
 const load = () => {
   try {
     const items = JSON.parse(localStorage.getItem(KEY)) ?? []
-    return items.filter((i) => PRODUCTS.some((p) => p.id === i.id)).map((i) => ({ ...i, key: i.key ?? lineKey(i.id, i.size, i.custom) }))
+    return items.filter((i) => PRODUCTS.some((p) => p.id === i.id)).map((i) => ({ ...i, key: i.key ?? lineKey(i.id, i.size, i.custom, i.color) }))
   } catch {
     return []
   }
@@ -53,12 +53,12 @@ export function CartProvider({ children }) {
       shipping,
       total: subtotal + shipping,
       setOpen,
-      // opts: { size, custom: { text, place } }
-      add(id, qty = 1, { size, custom } = {}) {
-        const key = lineKey(id, size, custom)
+      // opts: { size, color (renk adı), custom: { text, place } }
+      add(id, qty = 1, { size, color, custom } = {}) {
+        const key = lineKey(id, size, custom, color)
         setItems((prev) => {
           const found = prev.find((i) => i.key === key)
-          return found ? prev.map((i) => (i.key === key ? { ...i, qty: i.qty + qty } : i)) : [...prev, { key, id, qty, size, custom }]
+          return found ? prev.map((i) => (i.key === key ? { ...i, qty: i.qty + qty } : i)) : [...prev, { key, id, qty, size, color, custom }]
         })
         setToast(`${PRODUCTS.find((p) => p.id === id).name} sepete eklendi`)
       },

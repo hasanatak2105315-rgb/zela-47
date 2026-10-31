@@ -1,10 +1,11 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useCart, FREE_SHIPPING, CUSTOM_PRINT_FEE, unitPrice } from '../store/cart'
-import { formatPrice } from '../data/products'
+import { formatPrice, withColor, discount } from '../data/products'
 import { lockScroll } from '../scroll'
 import { navigate } from '../router'
 import { whatsappLink } from '../data/site'
+import { useFavorites, toggleFavorite } from '../store/favorites'
 import { useBody, recommendedSize } from '../store/body'
 
 const ProductStage = lazy(() => import('../three/ProductViews').then((m) => ({ default: m.ProductStage })))
@@ -49,17 +50,79 @@ function SizePicker({ product, value, onChange, error }) {
   )
 }
 
+// Renk seçimi: seçilen renk 3D modele anında uygulanır
+export function ColorPicker({ product, value, onChange }) {
+  const name = product.colors.find(([, hex]) => hex === value)?.[0]
+  return (
+    <div className="colors" role="radiogroup" aria-label="Renk">
+      <span>
+        Renk <b>{name}</b>
+      </span>
+      <div>
+        {product.colors.map(([label, hex]) => (
+          <button
+            key={hex}
+            type="button"
+            role="radio"
+            aria-checked={value === hex}
+            aria-label={label}
+            title={label}
+            className={value === hex ? 'active' : ''}
+            style={{ '--swatch': hex }}
+            onClick={() => onChange(hex)}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export const HeartIcon = ({ filled }) => (
+  <svg viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z" />
+  </svg>
+)
+
+export function FavoriteButton({ id, className = '' }) {
+  const on = useFavorites().includes(id)
+  return (
+    <button
+      type="button"
+      className={`fav-btn ${on ? 'fav-btn--on' : ''} ${className}`}
+      aria-pressed={on}
+      aria-label={on ? 'Favorilerden çıkar' : 'Favorilere ekle'}
+      onClick={() => toggleFavorite(id)}
+    >
+      <HeartIcon filled={on} />
+    </button>
+  )
+}
+
+// Paylaş: telefonda paylaşım menüsünü açar, bilgisayarda WhatsApp ile paylaşır
+function share(product) {
+  const url = window.location.origin
+  const text = `${product.name} · ${formatPrice(product.price)} · ZELA 47`
+  if (navigator.share) return navigator.share({ title: product.name, text, url }).catch(() => {})
+  window.open(`https://wa.me/?text=${encodeURIComponent(`${text} ${url}`)}`, '_blank', 'noopener')
+}
+
 export function ProductModal({ product, onClose, onCustom }) {
   const { add, setOpen } = useCart()
   const [qty, setQty] = useState(1)
   const [size, setSize] = useState(null)
+  const [color, setColor] = useState(null)
   const [sizeError, setSizeError] = useState(false)
   useEscape(!!product, onClose)
   useEffect(() => {
     setQty(1)
     setSize(null)
+    // kartta seçilen renk detayda da seçili gelir
+    setColor(product?.color ?? null)
     setSizeError(false)
   }, [product])
+  const shown = product && withColor(product, color)
+  const colorName = product?.colors?.find(([, hex]) => hex === color)?.[0]
+  const off = product ? discount(product) : 0
 
   return (
     <AnimatePresence>
@@ -81,7 +144,7 @@ export function ProductModal({ product, onClose, onCustom }) {
             </button>
             <div className="modal__stage" role="img" aria-label={`${product.name} — sürükleyerek döndürülebilen 3D görünüm`}>
               <Suspense fallback={<div className="stage-loader" aria-hidden="true" />}>
-                <ProductStage product={product} />
+                <ProductStage product={shown} />
               </Suspense>
               <span className="modal__hint">Döndürmek için sürükle</span>
             </div>
@@ -90,10 +153,11 @@ export function ProductModal({ product, onClose, onCustom }) {
                 <span className="dot" /> {product.category}
               </small>
               <h2 className="display">{product.name}</h2>
-              <div className="rating">★★★★★ <span>{product.rating} · 120+ değerlendirme</span></div>
+              <div className="rating">★★★★★ <span>{product.rating}</span></div>
               <div className="price price--lg">
                 {formatPrice(product.price)}
                 {product.oldPrice && <s>{formatPrice(product.oldPrice)}</s>}
+                {off > 0 && <em className="price__off">%{off} indirim</em>}
               </div>
               <p className="muted">{product.desc}</p>
               <ul className="specs">
@@ -101,6 +165,7 @@ export function ProductModal({ product, onClose, onCustom }) {
                   <li key={s}>{s}</li>
                 ))}
               </ul>
+              {product.colors && <ColorPicker product={product} value={color} onChange={setColor} />}
               {product.sizes && (
                 <SizePicker
                   product={product}
@@ -122,16 +187,23 @@ export function ProductModal({ product, onClose, onCustom }) {
                   className="btn btn--primary btn--grow"
                   onClick={() => {
                     if (product.sizes && !size) return setSizeError(true)
-                    add(product.id, qty, { size })
+                    add(product.id, qty, { size, color: colorName })
                     onClose()
                     setOpen(true)
                   }}
                 >
                   Sepete Ekle · {formatPrice(product.price * qty)}
                 </button>
+                <FavoriteButton id={product.id} className="fav-btn--lg" />
               </div>
               <button className="btn btn--ghost btn--block custom-cta" onClick={() => onCustom(product)}>
                 <PenIcon /> Kişiye Özel Baskı
+              </button>
+              <button className="share-btn" onClick={() => share(product)}>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+                  <path d="M12 15V4M8 8l4-4 4 4M5 13v6h14v-6" />
+                </svg>
+                Arkadaşına öner
               </button>
             </div>
           </motion.div>
@@ -436,9 +508,9 @@ export function CartDrawer() {
                           </div>
                           <div className="line__info">
                             <strong>{l.product.name}</strong>
-                            {(l.size || l.custom) && (
+                            {(l.size || l.color || l.custom) && (
                               <small className="line__opts">
-                                {[l.size && `Beden ${l.size}`, l.custom && `Kişiye özel${l.custom.place ? ` (${l.custom.place})` : ''}: “${l.custom.text}”`]
+                                {[l.color, l.size && `Beden ${l.size}`, l.custom && `Kişiye özel${l.custom.place ? ` (${l.custom.place})` : ''}: “${l.custom.text}”`]
                                   .filter(Boolean)
                                   .join(' · ')}
                               </small>

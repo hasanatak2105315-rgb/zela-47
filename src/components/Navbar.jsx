@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'motion/react'
-import { useCart } from '../store/cart'
+import { useCart, FREE_SHIPPING } from '../store/cart'
+import { useFavorites, requestFavorites } from '../store/favorites'
+import { formatPrice } from '../data/products'
+import { HeartIcon } from './Overlays'
 import { goToSection, navigate } from '../router'
 
 // '#' ile başlayanlar ana sayfadaki bölümler, '/' ile başlayanlar ayrı sayfalar
@@ -82,6 +85,28 @@ export function ZMark({ className, animated = false }) {
   )
 }
 
+// Üstteki duyuru bandı: kampanyalar sırayla döner. Sayfa kaydırılınca bant kapanır
+const NOTICES = [
+  `${formatPrice(FREE_SHIPPING)} ve üzeri alışverişte ücretsiz kargo`,
+  'Bültene katıl, ilk siparişinde %10 indirim',
+  '30 gün içinde koşulsuz iade'
+]
+
+function Topbar() {
+  const [i, setI] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setI((n) => (n + 1) % NOTICES.length), 4000)
+    return () => clearInterval(t)
+  }, [])
+  return (
+    <div className="topbar" aria-live="polite">
+      <motion.span key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
+        {NOTICES[i]}
+      </motion.span>
+    </div>
+  )
+}
+
 // Menüde ve alt kısımda yalnızca işaret durur (yanında yazı yok)
 export function Logo() {
   return (
@@ -94,6 +119,7 @@ export function Logo() {
 
 export default function Navbar() {
   const { count, setOpen } = useCart()
+  const favCount = useFavorites().length
   const [scrolled, setScrolled] = useState(false)
   const [menu, setMenu] = useState(false)
 
@@ -116,6 +142,7 @@ export default function Navbar() {
       animate={{ y: 0, opacity: 1 }}
       transition={{ delay: 0.15, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
     >
+      <Topbar />
       <div className="container nav__inner">
         <a href="/" aria-label="Ana sayfa" onClick={(e) => { e.preventDefault(); setMenu(false); navigate('/') }}>
           <Logo />
@@ -128,6 +155,18 @@ export default function Navbar() {
           ))}
         </nav>
         <div className="nav__actions">
+          <button
+            className="fav-nav"
+            onClick={() => {
+              setMenu(false)
+              requestFavorites()
+              goToSection('koleksiyon')
+            }}
+            aria-label={`Favorilerim (${favCount})`}
+          >
+            <HeartIcon filled={favCount > 0} />
+            {favCount > 0 && <b>{favCount}</b>}
+          </button>
           <button className="cart-btn" onClick={() => setOpen(true)} aria-label="Sepeti aç">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
               <path d="M6 7h12l-1 13H7L6 7Z" />
