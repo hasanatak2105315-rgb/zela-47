@@ -3,7 +3,6 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Float, Sparkles, MeshReflectorMaterial } from '@react-three/drei'
 import { EffectComposer, Bloom, Noise, Vignette } from '@react-three/postprocessing'
 import { Vector3 } from 'three'
-import { Keychain } from './Models'
 import { Tshirt, Joggers } from './Apparel'
 import { Studio } from './Studio'
 
@@ -44,12 +43,9 @@ function Hero3D() {
         </group>
       </Float>
       <group ref={orbit}>
-        <Float speed={2.2} floatIntensity={1.2}>
-          <Keychain scale={0.5} position={[-2.1, 0.7, -1.2]} rotation={[0.1, 0.5, 0.15]} />
-        </Float>
+        {/* yalnızca konfeksiyon: tişörtün yanında eşofman altı döner (anahtarlık ve vazo kaldırıldı) */}
         <Float speed={1.8} floatIntensity={1}>
-          {/* vazo yerine eşofman altı: sitede yalnızca tişört ve eşofman satılıyor */}
-          <Joggers color="#9aa3ab" scale={0.42} position={[2.1, -0.6, -1]} rotation={[0.2, -0.4, 0.15]} />
+          <Joggers color="#9aa3ab" scale={0.42} position={[-2.1, 0.5, -1.2]} rotation={[0.15, 0.5, 0.15]} />
         </Float>
       </group>
     </group>
