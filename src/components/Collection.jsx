@@ -9,8 +9,8 @@ import { PenIcon } from './Overlays'
 const CardView = lazy(() => import('../three/ProductViews').then((m) => ({ default: m.CardView })))
 const MannequinView = lazy(() => import('../three/ProductViews').then((m) => ({ default: m.MannequinView })))
 
-// Manken yalnızca giyim ürünlerini gösterir
-const wearable = (p) => p.category === 'Giyim'
+// Manken yalnızca giyilebilen (bedeni olan) ürünleri gösterir
+const wearable = (p) => !!p.sizes
 
 // Manken yalnızca fareli, geniş ekranlarda gösterilir (dokunmatikte "üzerine gelme" yok)
 const WIDE = '(min-width: 1025px) and (hover: hover)'
@@ -211,7 +211,7 @@ export default function Collection({ onOpen, onCustom }) {
   // ilk kategori değişiminden sonra yeniden görünen kartlar CSS ile hafifçe belirir
   const [switched, setSwitched] = useState(false)
   const list = cat === 'Tümü' ? PRODUCTS : PRODUCTS.filter((p) => p.category === cat)
-  // listede giyim yoksa (3D Baskı, Kişiye Özel) manken alanı gizlenir, ürünler tam genişlikte dizilir.
+  // listede giyilebilen ürün yoksa manken alanı gizlenir, ürünler tam genişlikte dizilir.
   // Manken kaldırılmaz, yalnızca gizlenir: yeniden kurmak kategori değişiminde ekranı takıyordu
   const wide = useWide()
   const tryOn = wide && list.some(wearable)

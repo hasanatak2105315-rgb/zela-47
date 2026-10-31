@@ -3,8 +3,8 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Float, Sparkles, MeshReflectorMaterial } from '@react-three/drei'
 import { EffectComposer, Bloom, Noise, Vignette } from '@react-three/postprocessing'
 import { Vector3 } from 'three'
-import { Vase, Keychain } from './Models'
-import { Tshirt } from './Apparel'
+import { Keychain } from './Models'
+import { Tshirt, Joggers } from './Apparel'
 import { Studio } from './Studio'
 
 const mouse = { x: 0, y: 0 }
@@ -48,7 +48,8 @@ function Hero3D() {
           <Keychain scale={0.5} position={[-2.1, 0.7, -1.2]} rotation={[0.1, 0.5, 0.15]} />
         </Float>
         <Float speed={1.8} floatIntensity={1}>
-          <Vase scale={0.38} position={[2.1, -0.6, -1]} rotation={[0.2, 0, 0.15]} />
+          {/* vazo yerine eşofman altı: sitede yalnızca tişört ve eşofman satılıyor */}
+          <Joggers color="#9aa3ab" scale={0.42} position={[2.1, -0.6, -1]} rotation={[0.2, -0.4, 0.15]} />
         </Float>
       </group>
     </group>

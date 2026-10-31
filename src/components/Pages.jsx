@@ -42,14 +42,14 @@ function Page({ eyebrow, title, intro, children }) {
 
 const VALUES = [
   ['Kendi Tasarımımız', 'Baskılarımızı kendimiz çiziyor, her birini kumaşa basmadan önce renk ve konum provası yapıyoruz. Yıkandıkça solmayan baskı kullanıyoruz.'],
-  ['Katman Katman', '3D baskı tasarımlarımızı biyobozunur PLA ile, ince katmanlar hâlinde basıyor ve son işlemlerini elle yapıyoruz.'],
+  ['Seçilmiş Kumaş', 'Tişörtlerimizde %100 pamuk penye, eşofmanlarımızda içi şardonlu kumaş kullanıyor, her parçayı dikimden sonra elle kontrol ediyoruz.'],
   ['Sana Özel', 'İsim, tarih, logo ya da kendi çizimin. Aklındaki fikri birlikte tasarlayıp gerçeğe dönüştürüyoruz.']
 ]
 
 const STEPS = [
   ['Tasarım', 'Fikir eskizden dijital modele dönüşür.'],
-  ['Üretim', 'Baskı kumaşa aktarılır, 3D tasarım yazıcıda basılır.'],
-  ['Son Dokunuş', 'Ütü, zımpara ve kalite kontrolü elle yapılır.'],
+  ['Üretim', 'Baskı kumaşa aktarılır, dikiş ve renk kontrol edilir.'],
+  ['Son Dokunuş', 'Ütü, katlama ve kalite kontrolü elle yapılır.'],
   ['Paketleme', 'Her sipariş hediye kutusunda yola çıkar.']
 ]
 
@@ -58,7 +58,7 @@ export function About() {
     <Page
       eyebrow="Hakkımızda"
       title={<>Küçük bir atölye, <em>büyük bir özen</em></>}
-      intro="ZELA 47, baskılı giyim ile 3D baskı tasarımları aynı çatı altında buluşturan Tokat merkezli bir atölye. Adımızı Jül Sezar'ın M.Ö. 47'de Zela'da, bugünkü Zile'de söylediği “Veni, vidi, vici” (Geldim, gördüm, yendim) sözünden aldık. Seri üretim yerine, her parçaya ayrı ayrı zaman ayırmayı seçiyoruz."
+      intro="ZELA 47, kendi tasarımı baskılı tişört ve eşofmanlar üreten Tokat merkezli bir atölye. Adımızı Jül Sezar'ın M.Ö. 47'de Zela'da, bugünkü Zile'de söylediği “Veni, vidi, vici” (Geldim, gördüm, yendim) sözünden aldık. Seri üretim yerine, her parçaya ayrı ayrı zaman ayırmayı seçiyoruz."
     >
       <div className="values">
         {VALUES.map(([t, d], i) => (
@@ -235,10 +235,9 @@ const FAQ = [
   {
     group: 'Ürünler',
     items: [
-      ['Kıyafetleriniz hangi kumaştan?', 'Tişörtlerimiz %100 pamuk penye, sweatshirt ve eşofmanlarımız içi şardonlu pamuk-polyester karışımıdır. Her ürünün kumaşı, ürün detayındaki özellikler bölümünde yazar.'],
+      ['Kıyafetleriniz hangi kumaştan?', 'Tişörtlerimiz %100 pamuk penye, eşofmanlarımız içi şardonlu pamuk-polyester karışımıdır. Her ürünün kumaşı, ürün detayındaki özellikler bölümünde yazar.'],
       ['Baskılar yıkamada solar mı?', 'Hayır. Baskılarımız yıkamaya dayanıklıdır. Ürünü ters çevirip 30°C’de yıkar, baskının üstünü ütülemezsen ilk günkü gibi kalır. Kurutma makinesi kullanmamanı öneririz.'],
-      ['3D baskı ürünler dayanıklı mı?', 'Tasarımlarımızı PLA ile basıyoruz. İç mekânda uzun yıllar kullanılabilir. Doğrudan güneş altında ve 50°C üzeri sıcakta bırakılmamalı, bulaşık makinesine konmamalıdır.'],
-      ['Hangi bedeni seçmeliyim?', 'Kalıplarımız standarttır, kapüşonlu sweatshirt oversize kesimdir. Sevdiğin bir tişörtünün koltuk altından koltuk altına genişliğini ölçüp bize yazarsan doğru bedeni birlikte bulalım.']
+      ['Hangi bedeni seçmeliyim?', 'Kalıplarımız standarttır. Sevdiğin bir tişörtünün koltuk altından koltuk altına genişliğini ölçüp bize yazarsan doğru bedeni birlikte bulalım.']
     ]
   },
   {
@@ -521,7 +520,7 @@ export function Terms() {
         </p>
         <h2>Ürün bilgileri ve fiyatlar</h2>
         <p>
-          Ürün bilgilerinin ve fiyatların doğru olması için özen gösteriyoruz. Baskılı ve 3D baskı ürünlerde renk, ölçü ve dokuda küçük farklar olabilir. Açık bir fiyat
+          Ürün bilgilerinin ve fiyatların doğru olması için özen gösteriyoruz. Baskılı ürünlerde renk, ölçü ve dokuda küçük farklar olabilir. Açık bir fiyat
           hatası olması durumunda siparişi iptal edip ödemenin tamamını iade etme hakkımız saklıdır.
         </p>
         <h2>Kişiye özel siparişler</h2>

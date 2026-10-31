@@ -44,7 +44,7 @@ export default function Hero({ ready }) {
           animate={ready ? { opacity: 1, y: 0 } : {}}
           transition={{ delay: d + 0.3, duration: 0.55, ease }}
         >
-          Kendi tasarımlarımızla baskılı tişört, sweatshirt ve eşofmanlar; katman katman basılan 3D tasarımlar. İstersen sana özel baskı da yapıyoruz.
+          Kendi tasarımlarımızla baskılı tişörtler ve eşofmanlar. İstersen adını, tarihini ya da kendi çizimini de basıyoruz.
         </motion.p>
         <motion.div
           className="hero__cta"

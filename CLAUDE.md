@@ -1,6 +1,6 @@
 # ZELA 47 — proje notları
 
-Baskılı giyim (tişört, sweatshirt, eşofman) ve 3D baskı ürünleri satan, sinematik 3D bir e-ticaret sitesi.
+Baskılı tişört ve eşofman satan, sinematik 3D bir e-ticaret sitesi. 31.10.2026'dan beri yalnızca 3 ürün var: Baskılı Tişört, Eşofman Altı, Eşofman Takımı (kullanıcı isteği; sweatshirt, kapüşonlu, 3D baskı ürünleri ve isimli anahtarlık kaldırıldı). Kişiye özel baskı hizmeti duruyor.
 
 Marka adı **ZELA 47** (kullanıcı seçti; eski adı "The Expendables", film adı olduğu için değiştirildi). Hikâye: Jül Sezar "Veni, vidi, vici" (Geldim, gördüm, yendim) sözünü M.Ö. 47'de Zela'da, bugünkü Tokat Zile'de söyledi. Baskı dokularındaki alt satır "VENI · VIDI · VICI". GitHub deposu `hasanatak2105315-rgb/zela-47` (eski adı the-expendables, GitHub eski adresi yönlendirir). Bilgisayardaki klasör adı hâlâ `the-expendables` Şimdilik sadece web sitesi var, yönetim paneli yok.
 
@@ -24,10 +24,10 @@ Marka adı **ZELA 47** (kullanıcı seçti; eski adı "The Expendables", film ad
 
 ## Dosyalar
 
-- `src/data/products.js`: ürünler ve kategoriler (Giyim, 3D Baskı, Kişiye Özel). Giyimde `color`, `color2` (takım altı), `print` (göğüs baskı yazısı) ve `sizes` (beden) alanları var
+- `src/data/products.js`: ürünler ve kategoriler (filtreler: Tümü, Tişört, Eşofman). Ürünlerde `color`, `color2` (takım altı), `print` (göğüs baskı yazısı) ve `sizes` (beden) alanları var
 - `src/data/site.js`: şirket ve iletişim bilgileri (e-posta hasanatak.2105315@gmail.com, adres Tokat Merkez, WhatsApp destek hattı 0532 565 42 88 (`whatsapp` boşsa WhatsApp butonları gizlenir); `whatsappLink()` wa.me bağlantısı üretir), site adresi (`url`, şimdilik `https://zela47.com.tr`; alan adı henüz alınmadı), Google Analytics kimliği (`analyticsId`) ve her sayfanın Google başlığı/açıklaması (`ROUTES`). Boş alanlar sitede gösterilmez
-- `src/three/Models.jsx`: ürünlerin kodla çizilmiş 3D modelleri (giyim + vazo, lamba, saksı, heykel, anahtarlık). Giyim modelleri `src/three/Apparel.jsx` içinde: kalıp şekli kalınlaştırılır, göğse canvas dokusuyla baskı yazısı eklenir
-- `src/three/HeroScene.jsx`: giriş sahnesi (baskılı tişört, anahtarlık, vazo, yansıyan zemin, bloom)
+- `src/three/Models.jsx`: ürünlerin kodla çizilmiş 3D modelleri (giyim + vazo, lamba, saksı, heykel, anahtarlık; 3D baskı modelleri satılmıyor ama kodu duruyor, anahtarlık girişte "Z" etiketi olarak kullanılıyor). Giyim modelleri `src/three/Apparel.jsx` içinde: kalıp şekli kalınlaştırılır, göğse canvas dokusuyla baskı yazısı eklenir
+- `src/three/HeroScene.jsx`: giriş sahnesi (kırmızı baskılı tişört, yörüngede "Z" etiketi ve gri eşofman altı, yansıyan zemin, bloom)
 - `src/three/ProductViews.jsx`: ürün kartlarındaki 3D görünümler (tek ortak Canvas + drei `View`), sanal prova mankeninin sahnesi ve ürün detayındaki 3D sahne
 - `src/three/Mannequin.jsx`: sanal prova mankeni, kadın ve erkek. Modeller `public/models/mannequin-female.glb` ve `mannequin-male.glb` (Sketchfab, DNC44 "Basic Human Female / Male", CC BY 4.0, Mixamo iskeleti; ~160 ve ~135 KB). Orijinal Sketchfab dosyalarında yüzeyin bağlama ölçeğinde boy ve derinlik eksenleri yer değiştirmişti; hazırlanırken düzeltildi, kemik adlarındaki `_NN` ekleri silindi, boy 1,72 / 1,80 m yapıldı, meshopt ile sıkıştırıldı. Modeller T duruşunda ve animasyonsuz: kollar `POSE` ile kodla indirilir (sol kol yanda, sağ kol öne, avuç yukarı), hafif nefes/salınım `IDLE` ile verilir. Kıyafetler mankenin kendi yüzeyinden üretilir: bölgeye (gövde, kol, bacak) düşen üçgenler alınıp biraz şişirilir ve aynı iskelete bağlanır (`REGIONS`, `OUTFITS`). Yüzey verisi sıkıştırılmış (-1…1) olduğu için bölge seçimi `getVertexPosition` ile, şişirme sıkıştırılmış koordinatta yapılır. Göğüs baskısı ve kapüşon kemiğe bağlı (`ANCHORS`), kamera her ürün tipinde ilgili bölgeye yaklaşır (`FOCUS`). Yükleyici kemik adlarındaki `:` işaretini siler (`mixamorigHead`)
 - `src/store/tryon.js`: mankende gösterilen ürün (kartın üzerine gelince değişir)
