@@ -10,6 +10,7 @@ Marka adı **ZELA 47** (kullanıcı seçti; eski adı "The Expendables", film ad
 - Kullanıcı Windows ve VS Code kullanır. Değişiklikleri **Claude yapar**: kodu değiştirir, `npm run build` ve tarayıcıda test eder, sonra `main` dalına commit edip push eder.
 - Kullanıcı güncel hâli kendi bilgisayarına VS Code terminalinde `git pull` ile çeker. Her push sonrası bunu hatırlat.
 - Kullanıcıdan elle kod değiştirmesini isteme.
+- Her işin sonunda üç bölümlü bir anlatım yaz (kullanıcı isteği, 31.10.2026): **Ne yaptım** (sade Türkçe, neden yapıldığıyla), **Değişen kod** (dosya adı + değişen önemli satırlar, kısa kod blokları; tüm dosyayı değil), **Senin yapacakların** (numaralı adımlar: `git pull`, gerekirse `npm install`, `npm run dev`, tarayıcıda neye bakılacağı). Kodu yine Claude değiştirir ve push eder
 
 ## Teknoloji
 
