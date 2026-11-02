@@ -64,7 +64,7 @@ export function printTexture(text, ink) {
     c.font = 'italic 500 190px "Playfair Display", Georgia, serif'
     c.fillText(text, 512, 270, 960)
     c.fillRect(392, 320, 240, 5)
-    c.font = '700 46px "Manrope", sans-serif'
+    c.font = '700 46px "Montserrat", sans-serif'
     if ('letterSpacing' in c) c.letterSpacing = '14px'
     c.fillText('VENI · VIDI · VICI', 512, 410, 960)
     tex.needsUpdate = true
