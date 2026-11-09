@@ -1,10 +1,10 @@
-import { Suspense, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { View, PerspectiveCamera, Float, ContactShadows, OrbitControls, Sparkles } from '@react-three/drei'
+import { View, PerspectiveCamera, Float, ContactShadows, OrbitControls } from '@react-three/drei'
 import { Model } from './Models'
 import { Studio } from './Studio'
-import { Mannequin } from './Mannequin'
-import { useTryOn } from '../store/tryon'
+import { useOnScreen } from './useOnScreen'
+import { usePaused, pauseBackground } from './pause'
 
 // Ürün kartlarındaki küçük 3D sahne. Hepsi tek bir ortak Canvas üzerinde çizilir (performans için).
 // hovered bir ref'tir: kartın üzerine gelmek React'te yeniden çizim yaptırmaz (takılmayı önler)
@@ -40,30 +40,20 @@ export function CardView({ product, hovered, className, visible = true }) {
   )
 }
 
-// Koleksiyonun yanındaki sanal prova sahnesi (manken)
-export function MannequinView({ className, visible = true }) {
-  const product = useTryOn()
-  return (
-    <View className={className} visible={visible}>
-      <PerspectiveCamera makeDefault position={[0, 0.55, 6.6]} fov={30} />
-      <Studio intensity={0.8} />
-      <spotLight position={[0.5, 3.5, 2]} angle={0.5} penumbra={1} intensity={30} color="#fff4e0" />
-      <Suspense fallback={null}>
-        <Mannequin product={product} />
-      </Suspense>
-      <Sparkles count={40} scale={[2.4, 3, 1.6]} position-y={0.4} size={1.6} speed={0.25} opacity={0.7} color="#d4a23a" />
-      <ContactShadows position={[0, -1.44, 0]} opacity={0.6} scale={3} blur={2.5} far={1.5} resolution={256} color="#000" />
-    </View>
-  )
-}
+// Sanal prova (manken) 09.11.2026'da kaldırıldı; manken kodu Mannequin.jsx içinde duruyor.
 
+// Tüm ürün kartlarını çizen tek tuval. Koleksiyon ekranda değilken gizlenir ve hiç çizilmez;
+// bir pencere açıkken son kare ekranda kalır ama yeni kare çizilmez
 export function ViewsCanvas() {
+  const onScreen = useOnScreen(useCallback(() => document.getElementById('koleksiyon'), []))
+  const paused = usePaused()
   return (
     <Canvas
       className="views-canvas"
+      frameloop={onScreen && !paused ? 'always' : 'never'}
       dpr={[1, 1.5]}
-      gl={{ antialias: true, alpha: true }}
-      style={{ position: 'fixed', inset: 0, pointerEvents: 'none' }}
+      gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+      style={{ position: 'fixed', inset: 0, pointerEvents: 'none', visibility: onScreen ? 'visible' : 'hidden' }}
     >
       <View.Port />
     </Canvas>
@@ -72,8 +62,10 @@ export function ViewsCanvas() {
 
 // Ürün detay penceresindeki büyük, döndürülebilir 3D görünüm
 export function ProductStage({ product }) {
+  // pencere açıkken arkadaki sahneler durur
+  useEffect(() => pauseBackground(), [])
   return (
-    <Canvas dpr={[1, 2]} camera={{ position: [0, 0.3, 4.6], fov: 35 }}>
+    <Canvas dpr={[1, 1.5]} camera={{ position: [0, 0.3, 4.6], fov: 35 }}>
       <Studio />
       <Float speed={1.5} rotationIntensity={0.15} floatIntensity={0.4}>
         <Model {...look(product)} scale={1.15} />

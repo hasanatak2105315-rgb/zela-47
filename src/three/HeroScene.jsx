@@ -1,10 +1,12 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Float, Sparkles, MeshReflectorMaterial } from '@react-three/drei'
 import { EffectComposer, Bloom, Noise, Vignette } from '@react-three/postprocessing'
 import { Vector3 } from 'three'
 import { Tshirt, Joggers } from './Apparel'
 import { Studio } from './Studio'
+import { useOnScreen } from './useOnScreen'
+import { usePaused } from './pause'
 
 const mouse = { x: 0, y: 0 }
 
@@ -53,6 +55,9 @@ function Hero3D() {
 }
 
 export default function HeroScene() {
+  // aşağı kaydırınca ya da ürün penceresi açıkken sahne çizilmez
+  const onScreen = useOnScreen(useCallback(() => document.querySelector('.hero'), []), '0px')
+  const paused = usePaused()
   useEffect(() => {
     const onMove = (e) => {
       mouse.x = (e.clientX / window.innerWidth) * 2 - 1
@@ -63,7 +68,7 @@ export default function HeroScene() {
   }, [])
 
   return (
-    <Canvas dpr={[1, 1.75]} camera={{ position: [0, 0.4, 6.2], fov: 35 }} gl={{ antialias: false }}>
+    <Canvas frameloop={onScreen && !paused ? 'always' : 'never'} dpr={[1, 1.5]} camera={{ position: [0, 0.4, 6.2], fov: 35 }} gl={{ antialias: false, powerPreference: 'high-performance' }}>
       <color attach="background" args={['#f7f0e3']} />
       <fog attach="fog" args={['#f7f0e3', 7, 17]} />
       <Studio />
@@ -75,7 +80,7 @@ export default function HeroScene() {
         <planeGeometry args={[60, 60]} />
         <MeshReflectorMaterial
           blur={[300, 80]}
-          resolution={768}
+          resolution={512}
           mixBlur={1}
           mixStrength={3}
           roughness={1}
