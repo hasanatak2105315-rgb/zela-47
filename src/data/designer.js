@@ -122,13 +122,77 @@ export const newId = () => `l${Date.now().toString(36)}${(seq++).toString(36)}`
 
 export const newText = (ink) => ({ id: newId(), type: 'text', text: 'Yazını yaz', font: 'montserrat', color: ink, size: 0.14, x: 0.5, y: 0.3, rot: 0 })
 export const newArt = (key, ink) => ({ id: newId(), type: 'art', art: key, color: ink, w: 0.42, x: 0.5, y: 0.45, rot: 0 })
-export const newImage = (src, ratio, natural) => ({ id: newId(), type: 'image', src, ratio, natural, w: 0.6, x: 0.5, y: 0.45, rot: 0 })
+// Fotoğraf: alanın yüksekliğini aşmayacak genişlikte, verilen noktaya (sürükle-bırak) ya da ortaya yerleşir
+export const newImage = (src, ratio, natural, area, at) => ({
+  id: newId(),
+  type: 'image',
+  src,
+  ratio,
+  natural,
+  shape: 'none',
+  filter: 'none',
+  w: Math.round(Math.min(0.6, (0.8 * ratio * area.h) / area.w) * 1000) / 1000,
+  x: at?.x ?? 0.5,
+  y: at?.y ?? 0.45,
+  rot: 0
+})
+
+// Fotoğraf şekilleri: yuvarlak ve kalp kare kırpılır (fotoğrafın ortası alınır)
+export const SHAPES = [
+  { key: 'none', label: 'Orijinal' },
+  { key: 'rounded', label: 'Oval köşe' },
+  { key: 'circle', label: 'Yuvarlak' },
+  { key: 'heart', label: 'Kalp' }
+]
+// Fotoğraf filtreleri: aynı CSS filtresi düzenleyicide ve baskı dosyasında kullanılır
+export const FILTERS = [
+  { key: 'none', label: 'Orijinal', css: 'none' },
+  { key: 'bw', label: 'Siyah-beyaz', css: 'grayscale(1) contrast(1.1)' },
+  { key: 'sepia', label: 'Sepya', css: 'sepia(0.85) contrast(1.05)' },
+  { key: 'vivid', label: 'Canlı', css: 'saturate(1.6) contrast(1.08)' },
+  { key: 'fade', label: 'Soluk', css: 'saturate(0.55) brightness(1.08) contrast(0.9)' }
+]
+export const filterCss = (key) => FILTERS.find((f) => f.key === key)?.css ?? 'none'
+const HEART = 'M50 92S4 62 4 31a23 23 0 0 1 46-6 23 23 0 0 1 46 6c0 31-46 61-46 61z'
+export const HEART_MASK = `url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="${HEART}"/></svg>`)}")`
+const squareShape = (l) => l.type === 'image' && (l.shape === 'circle' || l.shape === 'heart')
+// Oval köşe yarıçapı (katman genişliğine oranla)
+export const ROUND = 0.08
+
+// Katmanın en/boy oranı (yazı hariç)
+export const layerRatio = (l) => (l.type === 'art' ? CLIPART.find((a) => a.key === l.art).ratio : squareShape(l) ? 1 : l.ratio)
 
 export const fontOf = (key) => FONTS.find((f) => f.key === key) ?? FONTS[0]
 export const layerText = (l) => (fontOf(l.font).upper ? l.text.toLocaleUpperCase('tr-TR') : l.text)
 
-// Görsel katmanın baskıdaki çözünürlüğü (dpi)
-export const imageDpi = (layer, area) => Math.round(layer.natural / ((layer.w * area.cm) / 2.54))
+// Fotoğrafın baskıdaki çözünürlüğü (dpi); kare kırpılınca yatay fotoğrafın eni kısalır
+export const imageDpi = (layer, area) => {
+  const px = squareShape(layer) && layer.ratio > 1 ? layer.natural / layer.ratio : layer.natural
+  return Math.round(px / ((layer.w * area.cm) / 2.54))
+}
+
+// Fotoğrafı kutuya "kaplayarak" çizer (taşan kısım kırpılır), şekil maskesi ve filtreyle
+function drawPhoto(c, img, l, w, h) {
+  c.filter = filterCss(l.filter)
+  if (l.shape === 'circle' || l.shape === 'heart' || l.shape === 'rounded') {
+    c.beginPath()
+    if (l.shape === 'circle') c.ellipse(0, 0, w / 2, h / 2, 0, 0, Math.PI * 2)
+    else if (l.shape === 'rounded') c.roundRect(-w / 2, -h / 2, w, h, ROUND * w)
+    else {
+      const p = new Path2D()
+      p.addPath(new Path2D(HEART), new DOMMatrix().translate(-w / 2, -h / 2).scale(w / 100, h / 100))
+      c.clip(p)
+    }
+    if (l.shape !== 'heart') c.clip()
+  }
+  const iw = img.naturalWidth || img.width
+  const ih = img.naturalHeight || img.height
+  if (!iw || !ih) return c.drawImage(img, -w / 2, -h / 2, w, h)
+  const s = Math.max(w / iw, h / ih)
+  const sw = w / s
+  const sh = h / s
+  c.drawImage(img, (iw - sw) / 2, (ih - sh) / 2, sw, sh, -w / 2, -h / 2, w, h)
+}
 
 // Katmanın kaplayacağı yükseklik (alan genişliği cinsinden): görsellerde oran, yazıda satır sayısı
 export const LINE = 1.12
@@ -175,8 +239,9 @@ export async function renderSide(canvas, layers, area, W, bg) {
       lines.forEach((t, k) => c.fillText(t, 0, (k - (lines.length - 1) / 2) * px * LINE))
     } else if (srcs[i]) {
       const w = l.w * W
-      const h = w / (l.type === 'art' ? CLIPART.find((a) => a.key === l.art).ratio : l.ratio)
-      c.drawImage(srcs[i], -w / 2, -h / 2, w, h)
+      const h = w / layerRatio(l)
+      if (l.type === 'image') drawPhoto(c, srcs[i], l, w, h)
+      else c.drawImage(srcs[i], -w / 2, -h / 2, w, h)
     }
     c.restore()
   })

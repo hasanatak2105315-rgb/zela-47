@@ -17,6 +17,12 @@ import {
   fontOf,
   layerText,
   imageDpi,
+  layerRatio,
+  filterCss,
+  SHAPES,
+  FILTERS,
+  HEART_MASK,
+  ROUND,
   newText,
   newArt,
   newImage,
@@ -88,9 +94,24 @@ function Layer({ layer, selected, onPointerDown, onHandle }) {
         {layerText(layer) || ' '}
       </span>
     )
+  } else if (layer.type === 'image') {
+    const mask = layer.shape === 'heart' ? HEART_MASK : undefined
+    body = (
+      <span
+        className="dz-photo"
+        style={{
+          width: `${layer.w * 100}cqw`,
+          aspectRatio: layerRatio(layer),
+          borderRadius: layer.shape === 'circle' ? '50%' : layer.shape === 'rounded' ? `${layer.w * ROUND * 100}cqw` : 0,
+          maskImage: mask,
+          WebkitMaskImage: mask
+        }}
+      >
+        <img src={layer.src} alt="" draggable={false} style={{ filter: filterCss(layer.filter) }} />
+      </span>
+    )
   } else {
-    const src = layer.type === 'art' ? clipartUrl(layer.art, layer.color) : layer.src
-    body = <img src={src} alt="" draggable={false} style={{ width: `${layer.w * 100}cqw` }} />
+    body = <img src={clipartUrl(layer.art, layer.color)} alt="" draggable={false} style={{ width: `${layer.w * 100}cqw` }} />
   }
   return (
     <div className={`dz-layer ${selected ? 'dz-layer--on' : ''}`} style={style} onPointerDown={onPointerDown}>
@@ -105,7 +126,7 @@ function Layer({ layer, selected, onPointerDown, onHandle }) {
   )
 }
 
-function Editor({ product, item, color, side, layers, selectedId, onSelect, onChange, onBegin }) {
+function Editor({ product, item, color, side, layers, selectedId, onSelect, onChange, onBegin, dragging, onDropFiles }) {
   const area = product.sides[side]
   const box = garmentBox(product)
   const areaRef = useRef()
@@ -148,9 +169,22 @@ function Editor({ product, item, color, side, layers, selectedId, onSelect, onCh
     }
   }
 
+  // Fotoğraf dosyası çizimin üstüne bırakılınca bırakılan noktaya yerleşir
+  const onDrop = (e) => {
+    if (!e.dataTransfer?.files?.length) return
+    e.preventDefault()
+    e.stopPropagation()
+    const r = areaRef.current.getBoundingClientRect()
+    const clamp = (v) => Math.min(0.95, Math.max(0.05, v))
+    onDropFiles(e.dataTransfer.files, { x: clamp((e.clientX - r.left) / r.width), y: clamp((e.clientY - r.top) / r.height) })
+  }
+
   const outside = layers.some((l) => l.x < 0 || l.x > 1 || l.y < 0 || l.y > 1)
   return (
-    <div className="dz-stage">
+    <div className={`dz-stage ${dragging ? 'dz-stage--drop' : ''}`} onDragOver={(e) => e.preventDefault()} onDrop={onDrop}>
+      <span className="dz-stage__drop" aria-hidden="true">
+        Bırak, {area.label.toLocaleLowerCase('tr-TR')} yüzüne eklensin
+      </span>
       <div className="dz-canvas">
       <svg className="dz-garment" viewBox={`${box.x} ${box.y} ${box.w} ${box.h}`} aria-hidden="true">
         <path d={garmentPath(product, side)} fill={color} stroke="rgba(43,27,20,0.25)" strokeWidth="0.008" />
@@ -175,7 +209,7 @@ function Editor({ product, item, color, side, layers, selectedId, onSelect, onCh
         {layers.map((l) => (
           <Layer key={l.id} layer={l} selected={l.id === selectedId} onPointerDown={(e) => start(e, l, 'move')} onHandle={(e, mode) => start(e, l, mode)} />
         ))}
-        {!layers.length && <span className="dz-area__empty">Yazı, görsel ya da grafik ekle</span>}
+        {!layers.length && <span className="dz-area__empty">Yazı, grafik ekle ya da fotoğrafını buraya sürükle</span>}
       </div>
       </div>
       {outside && <p className="dz-warn" role="status">Bir katman baskı alanının dışına taşıyor; taşan kısım basılmaz.</p>}
@@ -214,7 +248,26 @@ function LayerPanel({ layer, area, onChange, onAction, textRef }) {
   const dpi = layer.type === 'image' ? imageDpi(layer, area) : null
   return (
     <div className="dz-panel__group">
-      <h3>{layer.type === 'text' ? 'Yazı' : layer.type === 'art' ? 'Grafik' : 'Görsel'}</h3>
+      <h3>{layer.type === 'text' ? 'Yazı' : layer.type === 'art' ? 'Grafik' : 'Fotoğraf'}</h3>
+      {layer.type === 'image' && (
+        <>
+          <div className="dz-fonts" role="radiogroup" aria-label="Fotoğraf şekli">
+            {SHAPES.map((s) => (
+              <button key={s.key} type="button" role="radio" aria-checked={(layer.shape ?? 'none') === s.key} className={(layer.shape ?? 'none') === s.key ? 'active' : ''} onClick={() => onChange({ shape: s.key })}>
+                {s.label}
+              </button>
+            ))}
+          </div>
+          <div className="dz-filters" role="radiogroup" aria-label="Fotoğraf filtresi">
+            {FILTERS.map((f) => (
+              <button key={f.key} type="button" role="radio" aria-checked={(layer.filter ?? 'none') === f.key} className={(layer.filter ?? 'none') === f.key ? 'active' : ''} onClick={() => onChange({ filter: f.key })}>
+                <img src={layer.src} alt="" style={{ filter: f.css }} />
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
       {layer.type === 'text' && (
         <>
           <label className="field">
@@ -239,7 +292,7 @@ function LayerPanel({ layer, area, onChange, onAction, textRef }) {
       <Range label="Açı" value={layer.rot} min={-180} max={180} step={1} onChange={(rot) => onChange({ rot }, 'rot')} format={(v) => `${v}°`} />
       {dpi !== null && (
         <p className={dpi < MIN_DPI ? 'dz-warn' : 'dz-ok'} role="status">
-          {dpi < MIN_DPI ? `Görsel bu boyutta bulanık basılabilir (${dpi} dpi). Küçült ya da daha büyük bir görsel yükle.` : `Baskı kalitesi iyi (${dpi} dpi).`}
+          {dpi < MIN_DPI ? `Fotoğraf bu boyutta bulanık basılabilir (${dpi} dpi). Küçült ya da daha büyük bir fotoğraf yükle.` : `Baskı kalitesi iyi (${dpi} dpi).`}
         </p>
       )}
       <div className="dz-actions">
@@ -407,33 +460,117 @@ export default function Designer() {
     setSize(null)
   }
 
-  const onFile = async (e) => {
-    const file = e.target.files?.[0]
-    e.target.value = ''
-    if (!file) return
+  // Fotoğraf ekleme: dosya seçici, sürükle-bırak ve yapıştırma (Ctrl+V) aynı yoldan geçer.
+  // Birden fazla fotoğraf bırakılırsa hepsi eklenir, hafif kaydırılarak
+  const addFiles = async (files, at) => {
+    const list = [...(files ?? [])].slice(0, 6)
+    if (!list.length) return
     setUploadError('')
-    if (!/^image\/(png|jpeg|webp|svg\+xml)$/.test(file.type)) return setUploadError('PNG, JPG, WEBP ya da SVG yükleyebilirsin.')
-    if (file.size > 15 * 1024 * 1024) return setUploadError('Görsel en fazla 15 MB olabilir.')
-    try {
-      const { src, ratio, natural } = await readImageFile(file)
-      addLayer(newImage(src, ratio, natural))
-    } catch {
-      setUploadError('Görsel açılamadı, başka bir dosya dene.')
+    const read = []
+    for (const file of list) {
+      const okType = /^image\/(png|jpeg|webp|svg\+xml)$/.test(file.type) || (!file.type && /\.(png|jpe?g|webp|svg)$/i.test(file.name))
+      if (!okType) {
+        setUploadError('PNG, JPG, WEBP ya da SVG yükleyebilirsin (iPhone HEIC fotoğrafını önce JPG yap).')
+        continue
+      }
+      if (file.size > 15 * 1024 * 1024) {
+        setUploadError('Fotoğraf en fazla 15 MB olabilir.')
+        continue
+      }
+      try {
+        read.push(await readImageFile(file))
+      } catch {
+        setUploadError('Fotoğraf açılamadı, başka bir dosya dene.')
+      }
     }
+    if (!read.length) return
+    snapshot()
+    const made = read.map(({ src, ratio, natural }, i) => {
+      const p = at ?? { x: 0.5, y: 0.45 }
+      return newImage(src, ratio, natural, area, { x: Math.min(0.95, p.x + i * 0.06), y: Math.min(0.95, p.y + i * 0.06) })
+    })
+    setSideLayers((ls) => [...ls, ...made])
+    setSelectedId(made[made.length - 1].id)
+    setErrors((x) => ({ ...x, design: undefined }))
   }
+  const addFilesRef = useRef(addFiles)
+  addFilesRef.current = addFiles
+
+  const onFile = (e) => {
+    const files = [...(e.target.files ?? [])]
+    e.target.value = ''
+    addFiles(files)
+  }
+
+  // Sayfanın herhangi bir yerine dosya sürüklenince bırakma alanları belirginleşir; çizimin dışına
+  // bırakılan fotoğraf da ortaya eklenir (tarayıcı dosyayı açıp sayfadan çıkmasın diye)
+  const [dragging, setDragging] = useState(false)
+  useEffect(() => {
+    let depth = 0
+    const hasFiles = (e) => [...(e.dataTransfer?.types ?? [])].includes('Files')
+    const enter = (e) => {
+      if (!hasFiles(e)) return
+      depth++
+      setDragging(true)
+    }
+    const leave = (e) => {
+      if (!hasFiles(e)) return
+      depth = Math.max(0, depth - 1)
+      if (!depth) setDragging(false)
+    }
+    const over = (e) => hasFiles(e) && e.preventDefault()
+    // yakalama aşamasında: çizime ya da kutuya bırakılsa da sayaç sıfırlanır
+    const reset = () => {
+      depth = 0
+      setDragging(false)
+    }
+    const drop = (e) => {
+      if (!hasFiles(e)) return
+      e.preventDefault()
+      addFilesRef.current(e.dataTransfer.files)
+    }
+    // Panodaki fotoğraf Ctrl+V ile eklenir
+    const paste = (e) => {
+      const files = [...(e.clipboardData?.files ?? [])].filter((f) => f.type.startsWith('image/'))
+      if (!files.length) return
+      e.preventDefault()
+      addFilesRef.current(files)
+    }
+    window.addEventListener('dragenter', enter)
+    window.addEventListener('dragleave', leave)
+    window.addEventListener('dragover', over)
+    window.addEventListener('drop', reset, true)
+    window.addEventListener('drop', drop)
+    window.addEventListener('dragend', reset)
+    window.addEventListener('paste', paste)
+    return () => {
+      window.removeEventListener('dragenter', enter)
+      window.removeEventListener('dragleave', leave)
+      window.removeEventListener('dragover', over)
+      window.removeEventListener('drop', reset, true)
+      window.removeEventListener('drop', drop)
+      window.removeEventListener('dragend', reset)
+      window.removeEventListener('paste', paste)
+    }
+  }, [])
 
   const used = SIDES.filter((s) => layers[s].length)
   const custom = used.length > 0
   const price = unitPrice(item, custom)
-  const summary = (s) =>
-    layers[s]
-      .map((l) => (l.type === 'text' ? `“${l.text.replace(/\n/g, ' ')}”` : l.type === 'art' ? CLIPART.find((a) => a.key === l.art).label : 'görsel'))
-      .join(' + ')
+  // Sepet özeti: aynı türden öğeler sayıyla toplanır (ör. "2 fotoğraf + “Ece”")
+  const summary = (s) => {
+    const counts = new Map()
+    layers[s].forEach((l) => {
+      const label = l.type === 'text' ? `“${l.text.replace(/\n/g, ' ')}”` : l.type === 'art' ? CLIPART.find((a) => a.key === l.art).label : 'fotoğraf'
+      counts.set(label, (counts.get(label) ?? 0) + 1)
+    })
+    return [...counts].map(([label, n]) => (n > 1 ? `${n} ${label.toLocaleLowerCase('tr-TR')}` : label)).join(' + ')
+  }
 
   const addToCart = async () => {
     const found = {}
     if (!size) found.size = true
-    if (!custom) found.design = 'Önce tasarımına bir yazı, görsel ya da grafik ekle.'
+    if (!custom) found.design = 'Önce tasarımına bir yazı, fotoğraf ya da grafik ekle.'
     setErrors(found)
     if (Object.keys(found).length) return
     setBusy(true)
@@ -483,7 +620,7 @@ export default function Designer() {
             <h1 className="display">
               Kendin <em>tasarla</em>
             </h1>
-            <p className="muted">Yazını, görselini ya da hazır grafiklerimizi ekle, sürükleyip büyüt, 3D önizlemede kumaşın üstünde gör.</p>
+            <p className="muted">Fotoğrafını sürükleyip bırak, yazını ya da hazır grafiklerimizi ekle; taşı, büyüt, 3D önizlemede kumaşın üstünde gör.</p>
           </div>
           <div className="dz-history">
             <button type="button" onClick={undo} disabled={!past.current.length} title="Geri al (Ctrl+Z)">
@@ -522,22 +659,38 @@ export default function Designer() {
 
             <div className="dz-panel__group">
               <h3>Ekle</h3>
-              <div className="dz-add">
-                <button
-                  type="button"
-                  className="btn btn--ghost"
-                  onClick={() => {
-                    addLayer(newText(ink))
-                    setTimeout(() => textRef.current?.select(), 50)
-                  }}
-                >
-                  Aa · Yazı
-                </button>
-                <button type="button" className="btn btn--ghost" onClick={() => fileRef.current.click()}>
-                  ⇪ Görsel yükle
-                </button>
-                <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden onChange={onFile} />
-              </div>
+              <button
+                type="button"
+                className={`dz-drop ${dragging ? 'dz-drop--on' : ''}`}
+                onClick={() => fileRef.current.click()}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  if (!e.dataTransfer?.files?.length) return
+                  e.preventDefault()
+                  e.stopPropagation()
+                  setDragging(false)
+                  addFiles(e.dataTransfer.files)
+                }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="3" y="4" width="18" height="16" rx="3" />
+                  <circle cx="9" cy="10" r="2" />
+                  <path d="M21 16l-5-5-9 9" />
+                </svg>
+                <strong>{dragging ? 'Bırak, eklensin' : 'Fotoğrafını sürükle bırak'}</strong>
+                <small>ya da tıklayıp seç · PNG, JPG, WEBP, SVG · en fazla 15 MB</small>
+              </button>
+              <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" multiple hidden onChange={onFile} />
+              <button
+                type="button"
+                className="btn btn--ghost btn--block dz-addtext"
+                onClick={() => {
+                  addLayer(newText(ink))
+                  setTimeout(() => textRef.current?.select(), 50)
+                }}
+              >
+                Aa · Yazı ekle
+              </button>
               {uploadError && (
                 <p className="dz-warn" role="alert">
                   {uploadError}
@@ -575,7 +728,7 @@ export default function Designer() {
                   {[...sideLayers].reverse().map((l) => (
                     <li key={l.id}>
                       <button type="button" className={l.id === selectedId ? 'active' : ''} onClick={() => setSelectedId(l.id)}>
-                        {l.type === 'text' ? `Yazı: ${l.text.slice(0, 18) || '—'}` : l.type === 'art' ? CLIPART.find((a) => a.key === l.art).label : 'Görsel'}
+                        {l.type === 'text' ? `Yazı: ${l.text.slice(0, 18) || '—'}` : l.type === 'art' ? CLIPART.find((a) => a.key === l.art).label : 'Fotoğraf'}
                       </button>
                     </li>
                   ))}
@@ -617,8 +770,13 @@ export default function Designer() {
               onSelect={setSelectedId}
               onChange={patch}
               onBegin={() => snapshot()}
+              dragging={dragging}
+              onDropFiles={(files, at) => {
+                setDragging(false)
+                addFiles(files, at)
+              }}
             />
-            <p className="dz-tip muted">Sürükle: taşı · köşedeki nokta: büyüt · üstteki nokta: döndür · oklar: ince ayar · Delete: sil</p>
+            <p className="dz-tip muted">Fotoğrafı çizimin üstüne sürükle bırak · sürükle: taşı · köşedeki nokta: büyüt · üstteki nokta: döndür · Delete: sil</p>
           </div>
 
           {/* Sağ: 3D önizleme ve sipariş */}
