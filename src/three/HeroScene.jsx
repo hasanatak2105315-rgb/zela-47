@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Float, Sparkles, MeshReflectorMaterial } from '@react-three/drei'
-import { EffectComposer, Bloom, Noise, Vignette } from '@react-three/postprocessing'
+import { Float, Sparkles, ContactShadows } from '@react-three/drei'
 import { Vector3 } from 'three'
 import { Tshirt, Joggers } from './Apparel'
 import { Studio } from './Studio'
@@ -68,7 +67,7 @@ export default function HeroScene() {
   }, [])
 
   return (
-    <Canvas frameloop={onScreen && !paused ? 'always' : 'never'} dpr={[1, 1.5]} camera={{ position: [0, 0.4, 6.2], fov: 35 }} gl={{ antialias: false, powerPreference: 'high-performance' }}>
+    <Canvas frameloop={onScreen && !paused ? 'always' : 'never'} dpr={[1, 1.5]} camera={{ position: [0, 0.4, 6.2], fov: 35 }} gl={{ antialias: true, powerPreference: 'high-performance' }}>
       <color attach="background" args={['#f7f0e3']} />
       <fog attach="fog" args={['#f7f0e3', 7, 17]} />
       <Studio />
@@ -76,26 +75,14 @@ export default function HeroScene() {
       <Rig />
       <Hero3D />
       <Sparkles count={140} scale={[14, 7, 8]} size={2.2} speed={0.25} opacity={0.8} color="#d4a23a" />
+      {/* Zemin: eskiden yansıyan zemin (MeshReflectorMaterial) ve bloom/gren/vinyet efektleri vardı.
+          Sahneyi her karede iki kez çizip üstüne 5-6 tam ekran geçiş yapıyordu; kaydırırken en çok
+          bu bölüm takılıyordu. Şimdi düz zemin + bir kez çizilen yumuşak gölge, vinyet CSS'te (.hero__shade) */}
       <mesh rotation-x={-Math.PI / 2} position-y={-1.9}>
         <planeGeometry args={[60, 60]} />
-        <MeshReflectorMaterial
-          blur={[300, 80]}
-          resolution={512}
-          mixBlur={1}
-          mixStrength={3}
-          roughness={1}
-          depthScale={1.1}
-          minDepthThreshold={0.4}
-          maxDepthThreshold={1.4}
-          color="#dccaa9"
-          metalness={0.3}
-        />
+        <meshStandardMaterial color="#ecd9b4" roughness={0.9} />
       </mesh>
-      <EffectComposer multisampling={0}>
-        <Bloom mipmapBlur luminanceThreshold={1.1} intensity={0.4} />
-        <Noise opacity={0.04} />
-        <Vignette offset={0.2} darkness={0.3} />
-      </EffectComposer>
+      <ContactShadows frames={1} position={[1.9, -1.88, 0]} opacity={0.35} scale={9} blur={3} far={4} color="#5a3a22" />
     </Canvas>
   )
 }

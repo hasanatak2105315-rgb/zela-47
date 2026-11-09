@@ -121,7 +121,7 @@ main, .footer { position: relative; z-index: 1; }
 /* Giriş */
 .hero { position: relative; height: 100svh; min-height: 640px; overflow: hidden; }
 .hero__canvas { position: absolute; inset: 0; }
-.hero__shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, color-mix(in srgb, var(--bg) 85%, transparent) 0%, color-mix(in srgb, var(--bg) 35%, transparent) 45%, transparent 70%), linear-gradient(0deg, var(--bg) 0%, transparent 25%); }
+.hero__shade { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 60% 45%, transparent 55%, color-mix(in srgb, var(--text) 10%, transparent) 100%), linear-gradient(90deg, color-mix(in srgb, var(--bg) 85%, transparent) 0%, color-mix(in srgb, var(--bg) 35%, transparent) 45%, transparent 70%), linear-gradient(0deg, var(--bg) 0%, transparent 25%); }
 .hero__content { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: center; pointer-events: none; padding: 94px 0 90px; }
 .hero__content > * { pointer-events: auto; max-width: 640px; }
 /* başlık sola yaslı, üç satır: TARZIN / BİR DETAY DEĞİL, / BİR İMZA. */
