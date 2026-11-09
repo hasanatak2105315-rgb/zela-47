@@ -1,7 +1,8 @@
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useCart, FREE_SHIPPING, CUSTOM_PRINT_FEE, unitPrice } from '../store/cart'
-import { formatPrice, withColor, discount } from '../data/products'
+import { formatPrice, withColor, discount, soldOut } from '../data/products'
+import { saveOrder } from '../store/admin'
 import { lockScroll } from '../scroll'
 import { navigate } from '../router'
 import { whatsappLink } from '../data/site'
@@ -38,7 +39,9 @@ export function SizePicker({ product, value, onChange, error }) {
             type="button"
             role="radio"
             aria-checked={value === s}
-            className={[value === s && 'active', recommended === s && 'recommended'].filter(Boolean).join(' ')}
+            className={[value === s && 'active', recommended === s && 'recommended', soldOut(product, s) && 'soldout'].filter(Boolean).join(' ')}
+            disabled={soldOut(product, s)}
+            title={soldOut(product, s) ? `${s} beden tükendi` : undefined}
             onClick={() => onChange(s)}
           >
             {s}
@@ -364,6 +367,7 @@ function checkoutErrors(f) {
 }
 
 function Checkout({ total, onBack, onDone }) {
+  const { lines, subtotal, shipping } = useCart()
   const [f, setF] = useState({ name: '', surname: '', email: '', phone: '', address: '', card: '', exp: '', cvc: '', agree: false })
   const [errors, setErrors] = useState({})
   const [busy, setBusy] = useState(false)
@@ -399,10 +403,20 @@ function Checkout({ total, onBack, onDone }) {
     setBusy(true)
     // Demo: gerçek ödeme yerine kısa bir bekleme
     setTimeout(() => {
-      const order = { no: 'EX-' + Math.floor(100000 + Math.random() * 900000), total, email: f.email.trim() }
+      const order = { no: 'ZL-' + Math.floor(100000 + Math.random() * 900000), total, email: f.email.trim() }
       try {
         sessionStorage.setItem('last-order', JSON.stringify(order))
       } catch {}
+      // Yönetim paneli için siparişin tamamı (kart bilgisi kaydedilmez)
+      saveOrder({
+        ...order,
+        date: new Date().toISOString(),
+        status: 'new',
+        customer: { name: `${f.name.trim()} ${f.surname.trim()}`, email: f.email.trim(), phone: f.phone.trim(), address: f.address.trim() },
+        items: lines.map((l) => ({ id: l.id, name: l.product.name, size: l.size, color: l.color, qty: l.qty, unit: unitPrice(l.product, l.custom), custom: l.custom })),
+        subtotal,
+        shipping
+      })
       onDone()
       navigate('/tesekkurler')
     }, 1200)

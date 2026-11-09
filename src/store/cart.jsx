@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { PRODUCTS } from '../data/products'
+import { getSettings } from './admin'
 
 const CartContext = createContext(null)
 const KEY = 'tx-cart'
@@ -17,8 +18,10 @@ const load = () => {
   }
 }
 
-export const FREE_SHIPPING = 1500
-export const SHIPPING_FEE = 79
+// Kargo ücreti ve ücretsiz kargo sınırı (yönetim panelinden değiştirilebilir)
+const settings = getSettings()
+export const FREE_SHIPPING = Number.isFinite(settings.freeShipping) ? settings.freeShipping : 1500
+export const SHIPPING_FEE = Number.isFinite(settings.shippingFee) ? settings.shippingFee : 79
 // Kişiye özel baskının ürün başına ek ücreti (0 ise ücretsiz, sitede ek ücret yazmaz)
 export const CUSTOM_PRINT_FEE = 0
 

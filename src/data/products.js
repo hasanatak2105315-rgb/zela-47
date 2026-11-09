@@ -5,11 +5,16 @@
 // sizes = beden seçenekleri (varsa sepete eklemeden önce beden seçilir),
 // colors = renk seçenekleri [ad, renk kodu]; ilki varsayılan renktir ve color ile aynı olmalı
 
+import { getProductEdits } from '../store/admin'
+
 export const CATEGORIES = ['Tümü', 'Tişört', 'Eşofman']
 
 const SIZES = ['S', 'M', 'L', 'XL', 'XXL']
+// Yönetim panelinde seçilebilen tüm bedenler
+export const ALL_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL']
 
-export const PRODUCTS = [
+// Kodda yazılı hâli (panelde "varsayılana dön" için)
+export const BASE_PRODUCTS = [
   {
     id: 'baskili-tisort',
     name: 'Baskılı Tişört',
@@ -57,6 +62,27 @@ export const PRODUCTS = [
     specs: ['Üst + alt takım', 'İçi şardonlu', 'Lastikli paça', 'Logo baskı']
   }
 ]
+
+// Yönetim panelindeki değişiklikler (fiyat, renk, beden, stok, gizleme) site açılırken uygulanır.
+// Renk listesinin ilki ürünün varsayılan rengi olur
+export function applyEdits(base, edit) {
+  if (!edit) return { ...base }
+  const p = { ...base, ...edit }
+  if (!p.colors?.length) p.colors = base.colors
+  p.color = p.colors[0][1]
+  if (base.color2) p.color2 = p.color
+  if (!p.sizes?.length) p.sizes = base.sizes
+  if (!p.oldPrice || p.oldPrice <= p.price) delete p.oldPrice
+  if (!p.tag) delete p.tag
+  return p
+}
+const edits = getProductEdits()
+// Gizlenenler dahil tüm ürünler (panel için) ve sitede görünenler
+export const ALL_PRODUCTS = BASE_PRODUCTS.map((b) => applyEdits(b, edits[b.id]))
+export const PRODUCTS = ALL_PRODUCTS.filter((p) => !p.hidden)
+
+// Bedenin stoğu bitti mi? (stok girilmemişse sınırsız sayılır)
+export const soldOut = (product, size) => product.stock?.[size] === 0
 
 // Seçilen renkle ürünün kopyası (3D model ve manken bu rengi giyer). Takımda üst ve alt aynı renk olur
 export const withColor = (product, color) =>

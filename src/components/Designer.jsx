@@ -73,7 +73,9 @@ function saveDraft(draft) {
 function initial() {
   const q = new URLSearchParams(window.location.search)
   const draft = loadDraft()
-  const productId = DESIGN_PRODUCTS[q.get('urun')] ? q.get('urun') : DESIGN_PRODUCTS[draft?.productId] ? draft.productId : ITEMS[0].id
+  // yönetim panelinden gizlenen ürün seçilemez
+  const sellable = (id) => ITEMS.some((p) => p.id === id)
+  const productId = sellable(q.get('urun')) ? q.get('urun') : sellable(draft?.productId) ? draft.productId : ITEMS[0].id
   const product = PRODUCTS.find((p) => p.id === productId)
   const wanted = q.get('renk') ?? (draft?.productId === productId ? draft.color : null)
   const color = product.colors.some(([, hex]) => hex === wanted) ? wanted : product.color
@@ -310,7 +312,21 @@ function LayerPanel({ layer, area, onChange, onAction, textRef }) {
 
 /* ---------- Sayfa ---------- */
 
+// Tasarlanabilir ürünlerin hepsi yönetim panelinden gizlendiyse stüdyo kapalı
 export default function Designer() {
+  if (!ITEMS.length)
+    return (
+      <section className="section designer">
+        <div className="container">
+          <h1 className="display">Tasarım stüdyosu şu an kapalı</h1>
+          <p className="muted">Kişiye özel baskı yapılabilen ürünlerimiz şu an satışta değil. Bize WhatsApp'tan yazabilirsin.</p>
+        </div>
+      </section>
+    )
+  return <Studio />
+}
+
+function Studio() {
   const { add, setOpen } = useCart()
   const [init] = useState(initial)
   const [productId, setProductId] = useState(init.productId)
@@ -579,7 +595,7 @@ export default function Designer() {
     setBusy(true)
     const previews = {}
     for (const s of used) {
-      const cv = await renderSide(document.createElement('canvas'), layers[s], product.sides[s], 240, color)
+      const cv = await renderSide(document.createElement('canvas'), layers[s], product.sides[s], 360, color)
       previews[s] = cv.toDataURL('image/jpeg', 0.82)
     }
     add(item.id, qty, {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'motion/react'
 import { useCart, FREE_SHIPPING } from '../store/cart'
+import { getSettings } from '../store/admin'
 import { useFavorites, requestFavorites } from '../store/favorites'
 import { formatPrice } from '../data/products'
 import { HeartIcon } from './Overlays'
@@ -87,11 +88,13 @@ export function ZMark({ className, animated = false }) {
 }
 
 // Üstteki duyuru bandı: kampanyalar sırayla döner. Sayfa kaydırılınca bant kapanır
-const NOTICES = [
+export const DEFAULT_NOTICES = [
   `${formatPrice(FREE_SHIPPING)} ve üzeri alışverişte ücretsiz kargo`,
   'Bültene katıl, ilk siparişinde %10 indirim',
   '30 gün içinde koşulsuz iade'
 ]
+// Yönetim panelinden değiştirilebilir (boş satırlar atlanır)
+const NOTICES = (getSettings().notices ?? []).filter((t) => t.trim()).length ? getSettings().notices.filter((t) => t.trim()) : DEFAULT_NOTICES
 
 function Topbar() {
   const [i, setI] = useState(0)

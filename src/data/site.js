@@ -1,3 +1,5 @@
+import { getSettings } from '../store/admin'
+
 // Mağaza ve şirket bilgileri. Boş bırakılan alanlar sitede gösterilmez.
 export const SITE = {
   name: 'ZELA 47',
@@ -12,6 +14,10 @@ export const SITE = {
   url: 'https://zela47.com.tr', // Sitenin yayındaki adresi (sitemap ve paylaşım görseli için). Alan adı henüz alınmadı
   analyticsId: '' // Google Analytics 4 ölçüm kimliği (ör. 'G-XXXXXXX'). Boşsa analytics ve çerez bandı kapalıdır
 }
+
+// Yönetim panelinde değiştirilen iletişim bilgileri (boş bırakılan alan da geçerlidir: o bilgi gizlenir)
+const custom = getSettings()
+for (const k of ['email', 'phone', 'whatsapp', 'address', 'hours', 'instagram']) if (typeof custom[k] === 'string') SITE[k] = custom[k]
 
 // Sayfa adresleri, başlıkları ve Google'da görünecek açıklamaları
 export const ROUTES = {

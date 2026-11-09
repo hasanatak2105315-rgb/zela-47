@@ -14,6 +14,8 @@ import { CartProvider } from './store/cart'
 import { startSmoothScroll } from './scroll'
 
 // 3D kodu ana dosyadan ayrı, sonradan yüklenir
+// Yönetim paneli yalnızca /panel açılınca indirilir
+const Panel = lazy(() => import('./components/Panel'))
 const ViewsCanvas = lazy(() => import('./three/ProductViews').then((m) => ({ default: m.ViewsCanvas })))
 
 const PAGES = {
@@ -46,6 +48,13 @@ export default function App() {
     if (DESIGN_PRODUCTS[product.id]) navigate(`/tasarla?urun=${product.id}&renk=${encodeURIComponent(product.color)}`)
     else setCustomFor(product)
   }, [])
+
+  if (path === '/panel')
+    return (
+      <Suspense fallback={<div className="stage-loader" aria-hidden="true" />}>
+        <Panel />
+      </Suspense>
+    )
 
   return (
     <CartProvider>
