@@ -9,6 +9,7 @@ import {
   FONTS,
   INKS,
   CLIPART,
+  SHAPE_CATS,
   EXTRA_FONTS_URL,
   EXPORT_PX,
   MIN_DPI,
@@ -34,7 +35,7 @@ import {
 } from '../data/designer'
 
 // Tasarım stüdyosu (/tasarla): Printful, Customink gibi sitelerdeki tişört tasarlayıcılara benzer.
-// Ürün ve renk seçilir, ön ve arka yüze yazı, görsel ya da hazır grafik eklenir, sürükleyip
+// Ürün ve renk seçilir, ön ve arka yüze yazı, fotoğraf ya da kütüphaneden şekil eklenir, sürükleyip
 // büyütülür/döndürülür, tasarım canlı 3D önizlemede görünür ve sepete eklenir.
 
 const DesignStage = lazy(() => import('../three/DesignStage'))
@@ -76,7 +77,8 @@ function initial() {
   const product = PRODUCTS.find((p) => p.id === productId)
   const wanted = q.get('renk') ?? (draft?.productId === productId ? draft.color : null)
   const color = product.colors.some(([, hex]) => hex === wanted) ? wanted : product.color
-  const layers = draft?.layers && draft.productId === productId ? { front: draft.layers.front ?? [], back: draft.layers.back ?? [] } : empty()
+  const known = (ls) => (ls ?? []).filter((l) => l.type !== 'art' || CLIPART.some((a) => a.key === l.art))
+  const layers = draft?.layers && draft.productId === productId ? { front: known(draft.layers.front), back: known(draft.layers.back) } : empty()
   return { productId, color, layers }
 }
 
@@ -209,7 +211,7 @@ function Editor({ product, item, color, side, layers, selectedId, onSelect, onCh
         {layers.map((l) => (
           <Layer key={l.id} layer={l} selected={l.id === selectedId} onPointerDown={(e) => start(e, l, 'move')} onHandle={(e, mode) => start(e, l, mode)} />
         ))}
-        {!layers.length && <span className="dz-area__empty">Yazı, grafik ekle ya da fotoğrafını buraya sürükle</span>}
+        {!layers.length && <span className="dz-area__empty">Yazı, şekil ekle ya da fotoğrafını buraya sürükle</span>}
       </div>
       </div>
       {outside && <p className="dz-warn" role="status">Bir katman baskı alanının dışına taşıyor; taşan kısım basılmaz.</p>}
@@ -248,7 +250,7 @@ function LayerPanel({ layer, area, onChange, onAction, textRef }) {
   const dpi = layer.type === 'image' ? imageDpi(layer, area) : null
   return (
     <div className="dz-panel__group">
-      <h3>{layer.type === 'text' ? 'Yazı' : layer.type === 'art' ? 'Grafik' : 'Fotoğraf'}</h3>
+      <h3>{layer.type === 'text' ? 'Yazı' : layer.type === 'art' ? 'Şekil' : 'Fotoğraf'}</h3>
       {layer.type === 'image' && (
         <>
           <div className="dz-fonts" role="radiogroup" aria-label="Fotoğraf şekli">
@@ -322,6 +324,7 @@ export default function Designer() {
   const [busy, setBusy] = useState(false)
   const [version, setVersion] = useState(0)
   const [uploadError, setUploadError] = useState('')
+  const [shapeCat, setShapeCat] = useState(SHAPE_CATS[0][0])
   const past = useRef([])
   const future = useRef([])
   const lastPush = useRef({ key: null, t: 0 })
@@ -570,7 +573,7 @@ export default function Designer() {
   const addToCart = async () => {
     const found = {}
     if (!size) found.size = true
-    if (!custom) found.design = 'Önce tasarımına bir yazı, fotoğraf ya da grafik ekle.'
+    if (!custom) found.design = 'Önce tasarımına bir yazı, fotoğraf ya da şekil ekle.'
     setErrors(found)
     if (Object.keys(found).length) return
     setBusy(true)
@@ -620,7 +623,7 @@ export default function Designer() {
             <h1 className="display">
               Kendin <em>tasarla</em>
             </h1>
-            <p className="muted">Fotoğrafını sürükleyip bırak, yazını ya da hazır grafiklerimizi ekle; taşı, büyüt, 3D önizlemede kumaşın üstünde gör.</p>
+            <p className="muted">Fotoğrafını sürükleyip bırak, yazını ya da kütüphaneden bir şekil ekle; taşı, büyüt, 3D önizlemede kumaşın üstünde gör.</p>
           </div>
           <div className="dz-history">
             <button type="button" onClick={undo} disabled={!past.current.length} title="Geri al (Ctrl+Z)">
@@ -696,13 +699,26 @@ export default function Designer() {
                   {uploadError}
                 </p>
               )}
-              <div className="dz-clipart" aria-label="Hazır grafikler">
-                {CLIPART.map((c) => (
+            </div>
+
+            {/* Şekil kütüphanesi: kategori seçilir, şekle dokununca tasarıma eklenir */}
+            <div className="dz-panel__group">
+              <h3>Şekil kütüphanesi</h3>
+              <div className="dz-cats" role="tablist" aria-label="Şekil kategorisi">
+                {SHAPE_CATS.map(([key, label]) => (
+                  <button key={key} type="button" role="tab" aria-selected={shapeCat === key} className={shapeCat === key ? 'active' : ''} onClick={() => setShapeCat(key)}>
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <div className="dz-clipart" role="tabpanel" aria-label="Şekiller">
+                {CLIPART.filter((c) => c.cat === shapeCat).map((c) => (
                   <button key={c.key} type="button" title={c.label} aria-label={`${c.label} ekle`} onClick={() => addLayer(newArt(c.key, ink))}>
                     <img src={clipartUrl(c.key, '#2b1b14')} alt="" />
                   </button>
                 ))}
               </div>
+              <p className="dz-libnote muted">Şekle dokun, tasarıma eklensin. Rengini ve boyutunu sonra değiştirebilirsin.</p>
             </div>
 
             {selected ? (

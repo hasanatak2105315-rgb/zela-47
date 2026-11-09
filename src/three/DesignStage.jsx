@@ -9,12 +9,16 @@ import { Studio } from './Studio'
 // canvases: { front, back } tuvalleri, version: tasarım her değiştiğinde artar (doku yenilenir)
 
 function Decal({ canvas, version, area, back }) {
+  // Tuvalin boyutu değişirse (ilk çizim, ürün değişimi) doku yeniden kurulur: GPU'daki doku
+  // ilk yüklendiği boyutta sabit kalır, büyüyen tuval eskisine sığmaz
+  const dims = `${canvas.width}x${canvas.height}`
   const tex = useMemo(() => {
     const t = new CanvasTexture(canvas)
     t.colorSpace = SRGBColorSpace
     t.anisotropy = 8
     return t
-  }, [canvas])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canvas, dims])
   useEffect(() => {
     tex.needsUpdate = true
   }, [tex, version])
