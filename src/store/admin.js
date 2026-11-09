@@ -71,21 +71,37 @@ export const setProductEdits = (edits) => writeStore(KEYS.products, edits)
 export const getSettings = () => readStore(KEYS.settings, {})
 export const setSettings = (s) => writeStore(KEYS.settings, s)
 
-/* ---------- Panel şifresi ---------- */
+/* ---------- Panel girişi (e-posta + şifre) ---------- */
 
-// Şifre düz yazı değil, SHA-256 özeti olarak saklanır. Demo düzeyinde bir korumadır:
-// gerçek güvenlik için şifre sunucuda kontrol edilmelidir
-export async function hashPass(text) {
-  const data = new TextEncoder().encode('zela47:' + text)
-  const buf = await crypto.subtle.digest('SHA-256', data)
-  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('')
+// Şifre kodda düz yazı olarak durmaz: e-posta ve şifreden PBKDF2 (SHA-256, 210.000 tur) ile
+// üretilen özet saklanır. Site kodu herkese açık olduğu için demo düzeyinde bir korumadır;
+// gerçek güvenlik için giriş sunucuda (ör. Supabase) kontrol edilmelidir.
+// Panelden değiştirilirse yeni e-posta ve özet bu tarayıcıda saklanır (KEYS.pass)
+export const DEFAULT_LOGIN = {
+  email: 'hasanatak.2105315@gmail.com',
+  hash: 'e7003343f7e6a25e789d20ddb98f262c6308588de4203cf922d305bc915b4f9c'
 }
-export const hasPass = () => !!readStore(KEYS.pass, null)
-export async function setPass(text) {
-  writeStore(KEYS.pass, await hashPass(text))
+const normEmail = (e) => e.trim().toLowerCase()
+
+export async function hashLogin(email, pass) {
+  const enc = new TextEncoder()
+  const key = await crypto.subtle.importKey('raw', enc.encode(normEmail(email) + '\n' + pass), 'PBKDF2', false, ['deriveBits'])
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: enc.encode('zela47-panel-v2'), iterations: 210000 }, key, 256)
+  return [...new Uint8Array(bits)].map((b) => b.toString(16).padStart(2, '0')).join('')
 }
-export async function checkPass(text) {
-  return readStore(KEYS.pass, null) === (await hashPass(text))
+// Geçerli giriş bilgisi: panelden değiştirildiyse o, yoksa varsayılan
+// (eski sürümün yalnızca şifreli kaydı yok sayılır)
+export const currentLogin = () => {
+  const saved = readStore(KEYS.pass, null)
+  return saved?.email && saved?.hash ? saved : DEFAULT_LOGIN
+}
+export async function checkLogin(email, pass) {
+  const login = currentLogin()
+  if (normEmail(email) !== normEmail(login.email)) return false
+  return (await hashLogin(email, pass)) === login.hash
+}
+export async function setLogin(email, pass) {
+  writeStore(KEYS.pass, { email: normEmail(email), hash: await hashLogin(email, pass) })
 }
 const SESSION = 'zela-admin-session'
 export const isLoggedIn = () => {

@@ -29,28 +29,44 @@ const counted = (o) => o.status !== 'cancelled' // iptaller ciroya girmez
 
 /* ---------------- Giriş ---------------- */
 
+// Art arda yanlış girişte kısa bekleme (tarayıcı içinde; gerçek koruma sunucuyla gelecek)
+const LOCK = 'zela-admin-lock'
+const readLock = () => {
+  try {
+    return JSON.parse(sessionStorage.getItem(LOCK)) ?? { fails: 0, until: 0 }
+  } catch {
+    return { fails: 0, until: 0 }
+  }
+}
+const writeLock = (v) => {
+  try {
+    sessionStorage.setItem(LOCK, JSON.stringify(v))
+  } catch {}
+}
+
 function Login({ onDone }) {
-  const first = !admin.hasPass()
+  const [email, setEmail] = useState('')
   const [pass, setPass] = useState('')
-  const [again, setAgain] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
 
   const submit = async (e) => {
     e.preventDefault()
     setError('')
-    if (first) {
-      if (pass.length < 6) return setError('Şifre en az 6 karakter olmalı.')
-      if (pass !== again) return setError('İki şifre aynı değil.')
-      setBusy(true)
-      await admin.setPass(pass)
-    } else {
-      setBusy(true)
-      if (!(await admin.checkPass(pass))) {
-        setBusy(false)
-        return setError('Şifre yanlış.')
-      }
+    const lock = readLock()
+    const wait = Math.ceil((lock.until - Date.now()) / 1000)
+    if (wait > 0) return setError(`Çok fazla yanlış deneme. ${wait} saniye sonra tekrar dene.`)
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) return setError('E-posta adresini yaz.')
+    if (!pass) return setError('Şifreni yaz.')
+    setBusy(true)
+    const ok = await admin.checkLogin(email, pass)
+    setBusy(false)
+    if (!ok) {
+      const fails = lock.fails + 1
+      writeLock({ fails: fails >= 5 ? 0 : fails, until: fails >= 5 ? Date.now() + 30000 : 0 })
+      return setError(fails >= 5 ? 'Çok fazla yanlış deneme. 30 saniye sonra tekrar dene.' : 'E-posta ya da şifre yanlış.')
     }
+    writeLock({ fails: 0, until: 0 })
     admin.setLoggedIn(true)
     onDone()
   }
@@ -59,25 +75,23 @@ function Login({ onDone }) {
     <div className="adm-login">
       <form className="adm-login__card" onSubmit={submit} noValidate>
         <Logo />
-        <h1>{first ? 'Panel şifreni oluştur' : 'Yönetim paneli'}</h1>
-        <p className="muted">{first ? 'Bu şifreyle siparişlerini, ürünlerini ve site ayarlarını yöneteceksin. Unutmamak için bir yere not et.' : 'Devam etmek için panel şifreni yaz.'}</p>
+        <h1>Yönetim paneli</h1>
+        <p className="muted">Devam etmek için panel e-postanı ve şifreni yaz.</p>
+        <label className="field">
+          <span>E-posta</span>
+          <input type="email" name="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" autoFocus />
+        </label>
         <label className="field">
           <span>Şifre</span>
-          <input type="password" value={pass} onChange={(e) => setPass(e.target.value)} autoComplete={first ? 'new-password' : 'current-password'} autoFocus />
+          <input type="password" name="password" value={pass} onChange={(e) => setPass(e.target.value)} autoComplete="current-password" />
         </label>
-        {first && (
-          <label className="field">
-            <span>Şifre (tekrar)</span>
-            <input type="password" value={again} onChange={(e) => setAgain(e.target.value)} autoComplete="new-password" />
-          </label>
-        )}
         {error && (
           <p className="adm-error" role="alert">
             {error}
           </p>
         )}
         <button className="btn btn--primary btn--block" type="submit" disabled={busy}>
-          {first ? 'Şifreyi kaydet ve gir' : 'Giriş yap'}
+          {busy ? 'Kontrol ediliyor…' : 'Giriş yap'}
         </button>
         <a className="adm-login__back" href="/" onClick={(e) => (e.preventDefault(), navigate('/'))}>
           ← Siteye dön
@@ -702,15 +716,19 @@ function Settings({ onReset }) {
     setMsg('Kaydedildi. Siteyi yenileyince değişiklikler görünür.')
   }
 
-  const [pw, setPw] = useState({ old: '', next: '' })
+  // Giriş bilgileri: yeni e-posta ve/veya yeni şifre, şu anki şifre doğrulanarak kaydedilir
+  const [pw, setPw] = useState(() => ({ email: admin.currentLogin().email, old: '', next: '', again: '' }))
   const [pwMsg, setPwMsg] = useState('')
   const changePass = async (e) => {
     e.preventDefault()
-    if (!(await admin.checkPass(pw.old))) return setPwMsg('Şu anki şifre yanlış.')
-    if (pw.next.length < 6) return setPwMsg('Yeni şifre en az 6 karakter olmalı.')
-    await admin.setPass(pw.next)
-    setPw({ old: '', next: '' })
-    setPwMsg('Şifre değişti.')
+    const current = admin.currentLogin()
+    if (!(await admin.checkLogin(current.email, pw.old))) return setPwMsg('Şu anki şifre yanlış.')
+    if (!/^\S+@\S+\.\S+$/.test(pw.email.trim())) return setPwMsg('Giriş e-postası geçerli görünmüyor.')
+    if (pw.next && pw.next.length < 8) return setPwMsg('Yeni şifre en az 8 karakter olmalı.')
+    if (pw.next !== pw.again) return setPwMsg('Yeni şifreler aynı değil.')
+    await admin.setLogin(pw.email, pw.next || pw.old)
+    setPw({ email: pw.email.trim().toLowerCase(), old: '', next: '', again: '' })
+    setPwMsg('Giriş bilgilerin kaydedildi.')
   }
 
   return (
@@ -766,12 +784,17 @@ function Settings({ onReset }) {
         </div>
       </form>
 
-      <form className="adm-card" onSubmit={changePass}>
+      <form className="adm-card" onSubmit={changePass} noValidate>
         <div className="adm-card__head">
-          <h2>Panel şifresi</h2>
+          <h2>Giriş bilgileri</h2>
         </div>
+        <p className="muted adm-help">Panele bu e-posta ve şifreyle girersin. Değiştirmek için şu anki şifreni yaz; yeni şifre boş kalırsa yalnızca e-posta değişir.</p>
         <div className="adm-form">
-          <label className="field">
+          <label className="field adm-form__full">
+            <span>Giriş e-postası</span>
+            <input type="email" value={pw.email} onChange={(e) => setPw({ ...pw, email: e.target.value })} autoComplete="username" />
+          </label>
+          <label className="field adm-form__full">
             <span>Şu anki şifre</span>
             <input type="password" value={pw.old} onChange={(e) => setPw({ ...pw, old: e.target.value })} autoComplete="current-password" />
           </label>
@@ -779,12 +802,16 @@ function Settings({ onReset }) {
             <span>Yeni şifre</span>
             <input type="password" value={pw.next} onChange={(e) => setPw({ ...pw, next: e.target.value })} autoComplete="new-password" />
           </label>
+          <label className="field">
+            <span>Yeni şifre (tekrar)</span>
+            <input type="password" value={pw.again} onChange={(e) => setPw({ ...pw, again: e.target.value })} autoComplete="new-password" />
+          </label>
         </div>
         <div className="adm-actions">
           <button className="adm-ghost" type="submit">
-            Şifreyi değiştir
+            Kaydet
           </button>
-          {pwMsg && <span className={pwMsg === 'Şifre değişti.' ? 'adm-ok' : 'adm-error'}>{pwMsg}</span>}
+          {pwMsg && <span className={pwMsg === 'Giriş bilgilerin kaydedildi.' ? 'adm-ok' : 'adm-error'}>{pwMsg}</span>}
         </div>
       </form>
 
@@ -792,7 +819,7 @@ function Settings({ onReset }) {
         <div className="adm-card__head">
           <h2>Verileri sıfırla</h2>
         </div>
-        <p className="muted adm-help">Tüm siparişleri, ürün değişikliklerini ve ayarları siler; site ilk hâline döner. Panel şifren kalır.</p>
+        <p className="muted adm-help">Tüm siparişleri, ürün değişikliklerini ve ayarları siler; site ilk hâline döner. Giriş bilgilerin kalır.</p>
         <button className="adm-danger" onClick={() => window.confirm('Tüm siparişler, ürün değişiklikleri ve ayarlar silinsin mi? Bu geri alınamaz.') && onReset()}>
           Her şeyi sıfırla
         </button>
