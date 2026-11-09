@@ -35,7 +35,7 @@ function Hero3D() {
   })
 
   return (
-    <group position={[mobile ? 0.35 : 1.9, mobile ? -1.55 : 0.05, mobile ? -0.5 : 0]} scale={mobile ? 0.5 : 1}>
+    <group position={[mobile ? 0.35 : 2.3, mobile ? -1.55 : 0.05, mobile ? -0.5 : 0]} scale={mobile ? 0.5 : 1}>
       <Float speed={1.6} rotationIntensity={0.25} floatIntensity={0.6}>
         <group ref={hero}>
           {/* Zafer Alayı: giriş tişörtü Pompeii kırmızısı, krem zeminde öne çıksın */}

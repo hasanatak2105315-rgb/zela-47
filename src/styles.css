@@ -54,7 +54,9 @@ input, textarea { font: inherit; color: inherit; }
 /* Klavyeyle gezinirken seçili öğe net görünsün (fareyle tıklayınca çıkmaz) */
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
-.container { width: min(1280px, 100% - 32px); margin-inline: auto; }
+/* Geniş ekranda içerik ortalanmaz: soldan sabit bir boşlukla başlar, sağa kadar uzanır */
+:root { --gutter: clamp(16px, 3.4vw, 64px); }
+.container { width: calc(100% - 2 * var(--gutter)); margin-inline: auto; }
 .muted { color: var(--muted); }
 .display { font-family: var(--font-display); font-weight: 900; letter-spacing: -0.035em; line-height: 1.02; text-transform: uppercase; font-variant-numeric: lining-nums; }
 .display em, .hero__title em { font-style: normal; font-weight: 900; color: var(--accent); }
@@ -123,16 +125,18 @@ main, .footer { position: relative; z-index: 1; }
 .hero__shade { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, color-mix(in srgb, var(--bg) 85%, transparent) 0%, color-mix(in srgb, var(--bg) 35%, transparent) 45%, transparent 70%), linear-gradient(0deg, var(--bg) 0%, transparent 25%); }
 .hero__content { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: center; pointer-events: none; padding: 94px 0 90px; }
 .hero__content > * { pointer-events: auto; max-width: 640px; }
-.hero__title { font-family: var(--font-display); font-weight: 900; text-transform: uppercase; font-size: clamp(3rem, min(7.4vw, 11vh), 7.4rem); line-height: 1.04; letter-spacing: -0.02em; }
+/* başlık sola yaslı, üç satır: TARZIN / BİR DETAY DEĞİL, / BİR İMZA. */
+.hero__content > .hero__title { max-width: none; }
+.hero__title { font-family: var(--font-display); font-weight: 900; text-transform: uppercase; font-size: clamp(3rem, min(6.2vw, 10.5vh), 7.4rem); line-height: 1.04; letter-spacing: -0.02em; }
 .reveal-line { display: block; overflow: hidden; padding: 0.1em 0.06em 0.12em 0; margin: -0.1em 0 -0.08em; }
 .reveal-line > span { display: inline-block; }
 .hero__title em { text-shadow: none; }
 .hero__lead { margin: 26px 0 34px; color: var(--muted); font-size: 1.08rem; max-width: 460px; }
 .hero__cta { display: flex; gap: 12px; flex-wrap: wrap; }
-.hero__meta { position: absolute; left: 0; right: 0; bottom: 34px; display: flex; justify-content: space-between; align-items: end; pointer-events: none; }
+.hero__meta { position: absolute; left: 0; right: 0; bottom: 34px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; pointer-events: none; }
 .hero__meta small { display: block; font-size: 0.7rem; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
 .hero__meta strong { font-weight: 500; font-size: 0.92rem; }
-.hero__coords { text-align: right; }
+.hero__coords { justify-self: end; text-align: right; margin-right: 230px; } /* sağ alttaki WhatsApp butonunun altında kalmasın */
 .scroll-hint { pointer-events: auto; display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 0.7rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted); }
 .scroll-hint span { width: 1px; height: 48px; background: linear-gradient(var(--accent), transparent); animation: drip 2s var(--ease) infinite; transform-origin: top; }
 .scroll-hint:hover span { animation-play-state: paused; }
@@ -205,42 +209,6 @@ main, .footer { position: relative; z-index: 1; }
 .wa-btn svg { width: 22px; height: 22px; }
 .wa-inline { display: inline-flex; align-items: center; gap: 8px; }
 .wa-inline svg { width: 18px; height: 18px; color: var(--whatsapp); }
-
-/* Sanal prova (manken) */
-.collection--tryon { display: grid; grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.6fr); gap: 22px; align-items: start; }
-.collection--tryon .grid { grid-template-columns: repeat(2, 1fr); }
-.tryon { position: sticky; top: 96px; height: min(calc(100svh - 120px), 820px); border-radius: var(--radius); border: 1px solid var(--line); overflow: hidden; background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--gold) 16%, transparent), transparent 60%), radial-gradient(circle at 50% 110%, color-mix(in srgb, var(--gold) 18%, transparent), transparent 60%), linear-gradient(180deg, var(--surface), var(--bg-2)); }
-.tryon[hidden] { display: none; }
-.tryon__stage { position: absolute; inset: 0; transition: bottom 0.35s var(--ease); }
-.tryon--edit .tryon__stage { bottom: 44%; }
-/* 3D alan üstteki butonların altından başlar: manken yakınlaşınca butonların üstüne binmesin */
-.tryon__view { position: absolute; inset: 88px 0 0; }
-.tryon__measure { position: absolute; top: 14px; right: 14px; display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 99px; border: 1px solid var(--line-strong); background: color-mix(in srgb, var(--bg) 60%, transparent); backdrop-filter: blur(8px); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); transition: border-color 0.3s, background 0.3s; }
-.tryon__measure:hover, .tryon__measure[aria-expanded='true'] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
-.tryon__measure svg { width: 16px; height: 16px; }
-.tryon__form { position: absolute; left: 0; right: 0; bottom: 0; top: 56%; display: flex; flex-direction: column; gap: 10px; padding: 18px 20px 18px; border-top: 1px solid var(--line); background: var(--bg-2); overflow-y: auto; }
-.measure { display: grid; gap: 4px; }
-.measure span { display: flex; justify-content: space-between; font-size: 0.72rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
-.measure b { color: var(--text); letter-spacing: 0.04em; font-weight: 600; }
-.measure input { width: 100%; accent-color: var(--accent); }
-.tryon__size { font-size: 0.85rem; color: var(--muted); margin-top: 2px; }
-.tryon__size b { color: var(--accent-2); }
-.tryon__actions { display: flex; gap: 10px; margin-top: auto; }
-.tryon__actions .btn { flex: 1; padding: 11px 16px; font-size: 0.78rem; }
-.tryon__fit { display: block; margin-top: 4px; font-size: 0.8rem; color: var(--accent-2); }
-.tryon__label { position: absolute; top: 20px; left: 22px; margin: 0; }
-.tryon__gender { position: absolute; top: 50px; left: 18px; display: flex; gap: 2px; padding: 4px; border: 1px solid var(--line); border-radius: 99px; background: color-mix(in srgb, var(--bg) 60%, transparent); backdrop-filter: blur(8px); }
-.tryon__gender button { position: relative; padding: 6px 14px; border-radius: 99px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); transition: color 0.3s; }
-.tryon__gender button span { position: relative; z-index: 1; }
-.tryon__gender .filter-pill { position: absolute; inset: 0; border-radius: 99px; background: var(--accent); }
-.tryon__gender button.active { color: var(--on-accent); }
-.tryon__credit { position: absolute; right: 14px; bottom: 8px; font-size: 0.75rem; letter-spacing: 0.02em; color: var(--muted); opacity: 0.85; transition: opacity 0.3s; }
-.tryon__credit:hover { opacity: 1; }
-.tryon--edit .tryon__credit { display: none; }
-.tryon__info { position: absolute; left: 22px; right: 22px; bottom: 26px; min-height: 64px; display: flex; align-items: end; }
-.tryon__info small { display: block; font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
-.tryon__info strong { display: block; font-family: var(--font-display); font-weight: 800; font-size: 1.35rem; line-height: 1.1; margin: 4px 0 4px; }
-.tryon__hint { font-size: 0.85rem; color: var(--muted); }
 
 /* Büyük kayan yazı */
 .banner { position: relative; z-index: 1; padding: 140px 0 0; overflow: hidden; }
