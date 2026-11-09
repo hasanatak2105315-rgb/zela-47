@@ -17,6 +17,7 @@ export const SITE = {
 export const ROUTES = {
   '/': ['ZELA 47 — Baskılı Tişört ve Eşofman', 'Kendi tasarımlarımızla baskılı tişört ve eşofmanlar, kişiye özel baskı. 1.500 ₺ üzeri ücretsiz kargo.'],
   '/hakkimizda': ['Hakkımızda', 'Kendi tasarımı baskılı tişört ve eşofmanlar üreten Tokat merkezli bir marka. Hikâyemiz ve üretim sürecimiz.'],
+  '/tasarla': ['Kendin Tasarla', 'Tişörtünü ya da eşofman takımını kendin tasarla: yazı, görsel ve hazır grafik ekle, 3D önizlemede gör, sipariş ver.'],
   '/iletisim': ['İletişim', 'Sipariş, kişiye özel baskı ya da iade için bize ulaş. WhatsApp destek hattı ve e-posta ile en geç bir iş günü içinde dönüyoruz.'],
   '/sss': ['Sıkça Sorulan Sorular', 'Kargo süresi, beden seçimi, kumaş ve yıkama, kişiye özel baskı, ödeme ve iade hakkında sık sorulan sorular.'],
   '/iade': ['İade ve Değişim', '30 gün içinde koşulsuz iade. İade adımları, iade edilemeyen ürünler ve değişim koşulları.'],

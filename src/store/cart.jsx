@@ -5,7 +5,8 @@ const CartContext = createContext(null)
 const KEY = 'tx-cart'
 
 // Sepet satırı: aynı ürün farklı beden, renk ya da kişiye özel baskıyla ayrı satırda durur
-const lineKey = (id, size, custom, color) => [id, size ?? '', custom?.text ?? '', custom?.place ?? '', color ?? ''].join('|')
+// Tasarım stüdyosundan gelen her tasarımın kendi kimliği (custom.id) vardır, ayrı satırda durur
+const lineKey = (id, size, custom, color) => [id, size ?? '', custom?.text ?? '', custom?.place ?? '', color ?? '', custom?.id ?? ''].join('|')
 
 const load = () => {
   try {
@@ -53,7 +54,7 @@ export function CartProvider({ children }) {
       shipping,
       total: subtotal + shipping,
       setOpen,
-      // opts: { size, color (renk adı), custom: { text, place } }
+      // opts: { size, color (renk adı), custom: { text, place, id?, previews? } }
       add(id, qty = 1, { size, color, custom } = {}) {
         const key = lineKey(id, size, custom, color)
         setItems((prev) => {

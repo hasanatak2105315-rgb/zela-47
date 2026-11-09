@@ -9,6 +9,7 @@ import { goToSection, navigate } from '../router'
 // '#' ile başlayanlar ana sayfadaki bölümler, '/' ile başlayanlar ayrı sayfalar
 const LINKS = [
   ['#koleksiyon', 'Koleksiyon'],
+  ['/tasarla', 'Tasarla'],
   ['/hakkimizda', 'Hakkımızda'],
   ['/sss', 'SSS'],
   ['/iletisim', 'İletişim']

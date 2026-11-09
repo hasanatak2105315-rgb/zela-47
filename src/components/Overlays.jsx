@@ -26,7 +26,7 @@ function useEscape(active, fn) {
 }
 
 // Giyimde beden seçimi (seçilmeden sepete eklenmez). Ölçü girildiyse önerilen beden işaretlenir
-function SizePicker({ product, value, onChange, error }) {
+export function SizePicker({ product, value, onChange, error }) {
   const recommended = recommendedSize(product, useBody())
   return (
     <div className={`sizes ${error ? 'sizes--error' : ''}`} role="radiogroup" aria-label="Beden">
@@ -504,7 +504,11 @@ export function CartDrawer() {
                           exit={{ opacity: 0, x: 40 }}
                         >
                           <div className="line__thumb">
-                            {l.product.name.split(' ').map((w) => w[0]).join('').slice(0, 2)}
+                            {l.custom?.previews ? (
+                              Object.values(l.custom.previews).map((src, i) => <img key={i} src={src} alt="" />)
+                            ) : (
+                              l.product.name.split(' ').map((w) => w[0]).join('').slice(0, 2)
+                            )}
                           </div>
                           <div className="line__info">
                             <strong>{l.product.name}</strong>

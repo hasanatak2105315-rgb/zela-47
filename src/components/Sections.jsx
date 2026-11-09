@@ -221,8 +221,8 @@ export function Closing() {
             <button className="btn btn--primary" onClick={() => goToSection('koleksiyon')}>
               Koleksiyonu Keşfet
             </button>
-            <Link className="btn btn--ghost" to="/iletisim">
-              Kişiye Özel Baskı
+            <Link className="btn btn--ghost" to="/tasarla">
+              Kendin Tasarla
             </Link>
           </div>
         </motion.div>

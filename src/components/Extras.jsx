@@ -23,7 +23,7 @@ export function MobileCta() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [path])
 
-  const visible = show && !open && path !== '/tesekkurler'
+  const visible = show && !open && path !== '/tesekkurler' && path !== '/tasarla'
 
   return (
     <AnimatePresence>
@@ -62,7 +62,9 @@ export const WhatsAppIcon = () => (
 // Sağ altta sabit duran destek butonu. site.js içinde whatsapp numarası yoksa görünmez
 export function WhatsAppButton() {
   const href = whatsappLink('Merhaba, ZELA 47 sitesinden yazıyorum.')
-  if (!href) return null
+  // tasarım stüdyosunda sağ alttaki "Sepete Ekle" butonunun üstüne biniyordu
+  const path = usePath()
+  if (!href || path === '/tasarla') return null
   return (
     <a className="wa-btn" href={href} target="_blank" rel="noopener" aria-label="WhatsApp destek hattı">
       <WhatsAppIcon />

@@ -4,9 +4,11 @@ import Hero from './components/Hero'
 import Collection from './components/Collection'
 import { Marquee, Story, Features, BigBanner, Newsletter, Closing, Footer } from './components/Sections'
 import { ProductModal, CustomPrintModal, CartDrawer, Toast } from './components/Overlays'
+import Designer from './components/Designer'
 import { About, Contact, Faq, Returns, Kvkk, Privacy, Terms, DistanceSales, ThankYou, NotFound } from './components/Pages'
 import { MobileCta, CookieBanner, WhatsAppButton } from './components/Extras'
-import { usePath } from './router'
+import { usePath, navigate } from './router'
+import { DESIGN_PRODUCTS } from './data/designer'
 import { applyMeta } from './meta'
 import { CartProvider } from './store/cart'
 import { startSmoothScroll } from './scroll'
@@ -16,6 +18,7 @@ const ViewsCanvas = lazy(() => import('./three/ProductViews').then((m) => ({ def
 
 const PAGES = {
   '/hakkimizda': About,
+  '/tasarla': Designer,
   '/iletisim': Contact,
   '/sss': Faq,
   '/iade': Returns,
@@ -37,9 +40,11 @@ export default function App() {
 
   const closeModal = useCallback(() => setSelected(null), [])
   const closeCustom = useCallback(() => setCustomFor(null), [])
+  // Tasarım stüdyosunda olan ürünler stüdyoya gider, diğerleri kısa baskı formunu açar
   const openCustom = useCallback((product) => {
     setSelected(null)
-    setCustomFor(product)
+    if (DESIGN_PRODUCTS[product.id]) navigate(`/tasarla?urun=${product.id}&renk=${encodeURIComponent(product.color)}`)
+    else setCustomFor(product)
   }, [])
 
   return (

@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { RoundedBox } from '@react-three/drei'
 import { CanvasTexture, Color, ExtrudeGeometry, Shape, SRGBColorSpace } from 'three'
+import { TEE, SWEAT } from '../data/patterns'
 
 // Kodla çizilmiş giyim ürünleri: kesim kalıbı gibi 2D bir şekil yumuşak kenarlarla kalınlaştırılır,
 // göğse kendi tasarımımız olan baskı yazısı (canvas dokusu) eklenir.
@@ -8,7 +9,7 @@ import { CanvasTexture, Color, ExtrudeGeometry, Shape, SRGBColorSpace } from 'th
 const PI = Math.PI
 const DEPTH = 0.16
 const BEVEL = 0.07
-const FRONT = DEPTH / 2 + BEVEL + 0.003
+export const FRONT = DEPTH / 2 + BEVEL + 0.003
 
 const extrude = (shape) => {
   const g = new ExtrudeGeometry(shape, {
@@ -37,8 +38,6 @@ function pattern(half, { neckDip = 0.72, hem = -0.98, hemCurve = 0.04 } = {}) {
   return s
 }
 
-const TEE = [[0.3, 1.0], [0.66, 0.9], [1.08, 0.5], [0.84, 0.24], [0.62, 0.42], [0.64, -0.98]]
-const SWEAT = [[0.3, 1.0], [0.68, 0.9], [1.02, 0.45], [1.14, -0.62], [0.88, -0.66], [0.64, 0.36], [0.64, -0.92]]
 
 const isLight = (hex) => new Color(hex).getHSL({}).l > 0.55
 const shade = (hex, k) => '#' + new Color(hex).multiplyScalar(k).getHexString()
@@ -121,7 +120,7 @@ export function Tshirt({ color = '#f1ece2', print = 'Zela 47', ...props }) {
 }
 
 // Uzun kollu gövde: sweatshirt, kapüşonlu ve eşofman üstü bunu kullanır
-function SweatBody({ color, print, printY = 0.36, zip, stripe }) {
+export function SweatBody({ color, print, printY = 0.36, zip, stripe }) {
   const geo = useMemo(() => extrude(pattern(SWEAT, { hem: -0.92 })), [])
   return (
     <>
