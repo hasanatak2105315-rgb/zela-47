@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useCart, FREE_SHIPPING, CUSTOM_PRINT_FEE, unitPrice } from '../store/cart'
 import { formatPrice, withColor, discount, soldOut } from '../data/products'
 import { saveOrder } from '../store/admin'
+import { currentUser } from '../store/auth'
 import { lockScroll } from '../scroll'
 import { navigate } from '../router'
 import { whatsappLink } from '../data/site'
@@ -368,7 +369,12 @@ function checkoutErrors(f) {
 
 function Checkout({ total, onBack, onDone }) {
   const { lines, subtotal, shipping } = useCart()
-  const [f, setF] = useState({ name: '', surname: '', email: '', phone: '', address: '', card: '', exp: '', cvc: '', agree: false })
+  // Üye giriş yaptıysa bilgileri hazır gelir
+  const [f, setF] = useState(() => {
+    const u = currentUser()
+    const parts = (u?.name ?? '').split(' ')
+    return { name: parts.slice(0, -1).join(' ') || parts[0] || '', surname: parts.length > 1 ? parts[parts.length - 1] : '', email: u?.email ?? '', phone: u?.phone ?? '', address: u?.address ?? '', card: '', exp: '', cvc: '', agree: false }
+  })
   const [errors, setErrors] = useState({})
   const [busy, setBusy] = useState(false)
 
@@ -412,6 +418,7 @@ function Checkout({ total, onBack, onDone }) {
         ...order,
         date: new Date().toISOString(),
         status: 'new',
+        userId: currentUser()?.id,
         customer: { name: `${f.name.trim()} ${f.surname.trim()}`, email: f.email.trim(), phone: f.phone.trim(), address: f.address.trim() },
         items: lines.map((l) => ({ id: l.id, name: l.product.name, size: l.size, color: l.color, qty: l.qty, unit: unitPrice(l.product, l.custom), custom: l.custom })),
         subtotal,
@@ -448,6 +455,10 @@ function Checkout({ total, onBack, onDone }) {
         </span>
       </label>
       {err('agree')}
+      <p className="note">
+        Kişisel verilerin, siparişinin yürütülmesi amacıyla{' '}
+        <a href="/kvkk" target="_blank" rel="noopener">KVKK Aydınlatma Metni</a>’nde açıklandığı şekilde işlenir.
+      </p>
       <p className="note">Bu bir demo ödeme formudur, gerçek ödeme alınmaz.</p>
       <div className="totals">
         <div className="grand">

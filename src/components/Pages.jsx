@@ -8,7 +8,7 @@ import { Link } from '../router'
 
 const ease = [0.22, 1, 0.36, 1]
 
-const Reveal = ({ children, delay = 0, className }) => (
+export const Reveal = ({ children, delay = 0, className }) => (
   <motion.div
     className={className}
     initial={{ opacity: 0, y: 40 }}
@@ -20,8 +20,20 @@ const Reveal = ({ children, delay = 0, className }) => (
   </motion.div>
 )
 
+// Bize ulaşma yolu: e-posta adresi tanımlıysa o, değilse iletişim sayfası (cümle "…iletebilirsin / yazabilirsin" ile devam eder)
+const Reach = () =>
+  SITE.email ? (
+    <>
+      <a href={`mailto:${SITE.email}`}>{SITE.email}</a> adresine
+    </>
+  ) : (
+    <>
+      <Link to="/iletisim">İletişim sayfamız</Link> üzerinden
+    </>
+  )
+
 // Tüm alt sayfaların ortak başlığı
-function Page({ eyebrow, title, intro, children }) {
+export function Page({ eyebrow, title, intro, children }) {
   return (
     <section className="page">
       <div className="container">
@@ -121,9 +133,11 @@ export function Contact() {
     const found = validate(form)
     setErrors(found)
     if (Object.keys(found).length) return
-    // Sunucu olmadığı için mesaj, ziyaretçinin e-posta uygulamasında hazır açılır
+    // Sunucu olmadığı için mesaj hazır hâlde ziyaretçinin kendi uygulamasında açılır:
+    // e-posta adresi tanımlıysa e-posta uygulamasında, değilse WhatsApp'ta
     const body = `${form.message}\n\n${form.name} — ${form.email}${form.phone.trim() ? ` — ${form.phone.trim()}` : ''}`
-    window.location.href = `mailto:${SITE.email}?subject=${encodeURIComponent(`${form.topic} — ${form.name}`)}&body=${encodeURIComponent(body)}`
+    if (SITE.email) window.location.href = `mailto:${SITE.email}?subject=${encodeURIComponent(`${form.topic} — ${form.name}`)}&body=${encodeURIComponent(body)}`
+    else window.open(whatsappLink(`Konu: ${form.topic}\n\n${body}`), '_blank', 'noopener')
     setSent(true)
   }
 
@@ -143,10 +157,12 @@ export function Contact() {
     >
       <div className="contact">
         <Reveal className="contact__info">
-          <div>
-            <small>E-posta</small>
-            <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
-          </div>
+          {SITE.email && (
+            <div>
+              <small>E-posta</small>
+              <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+            </div>
+          )}
           {whatsappLink() && (
             <div>
               <small>WhatsApp destek hattı</small>
@@ -187,10 +203,20 @@ export function Contact() {
             <div className="contact__done">
               <div className="done-mark">✓</div>
               <h2 className="display">Mesajın hazır</h2>
-              <p className="muted">
-                E-posta uygulaman mesajınla birlikte açıldı, göndermeyi unutma. Açılmadıysa doğrudan{' '}
-                <a href={`mailto:${SITE.email}`}>{SITE.email}</a> adresine yazabilirsin.
-              </p>
+              {SITE.email ? (
+                <p className="muted">
+                  E-posta uygulaman mesajınla birlikte açıldı, göndermeyi unutma. Açılmadıysa doğrudan <a href={`mailto:${SITE.email}`}>{SITE.email}</a> adresine
+                  yazabilirsin.
+                </p>
+              ) : (
+                <p className="muted">
+                  WhatsApp mesajınla birlikte açıldı, göndermeyi unutma. Açılmadıysa{' '}
+                  <a href={whatsappLink('Merhaba, destek almak istiyorum.')} target="_blank" rel="noopener">
+                    {SITE.whatsapp}
+                  </a>{' '}
+                  numaralı destek hattımıza yazabilirsin.
+                </p>
+              )}
               <button className="btn btn--ghost" onClick={() => setSent(false)}>
                 Yeni mesaj
               </button>
@@ -214,6 +240,9 @@ export function Contact() {
                 </select>
               )}
               {field('message', 'Mesajın', <textarea rows={6} value={form.message} onChange={set('message')} aria-invalid={!!errors.message} />)}
+              <p className="note">
+                Yazdığın bilgiler, talebinin yanıtlanması amacıyla <Link to="/kvkk">KVKK Aydınlatma Metni</Link>’nde açıklandığı şekilde işlenir.
+              </p>
               <button className="btn btn--primary btn--block" type="submit">
                 Mesajı Gönder
               </button>
@@ -248,7 +277,7 @@ const FAQ = [
     group: 'Kişiye özel',
     items: [
       ['Kişiye özel baskı nasıl yaptırırım?', 'Her ürünün altındaki “Kişiye özel baskı” butonuna bas, bedenini ve baskı yerini seç, basılacak yazıyı ya da tasarım fikrini yaz. Üretime başlamadan önce sana bir önizleme gönderip onayını alıyoruz.'],
-      ['Kendi tasarımımı bastırabilir miyim?', 'Evet. Çizimini, logonu, fotoğrafını ya da 3D modelini (STL) WhatsApp ya da e-posta ile gönderebilirsin. Basılabilirliğini kontrol edip süre bilgisi veriyoruz.']
+      ['Kendi tasarımımı bastırabilir miyim?', 'Evet. Çizimini, logonu, fotoğrafını ya da 3D modelini (STL) WhatsApp ile gönderebilirsin. Basılabilirliğini kontrol edip süre bilgisi veriyoruz.']
     ]
   },
   {
@@ -310,7 +339,14 @@ export function Returns() {
         <h2>İade nasıl yapılır?</h2>
         <ol>
           <li>
-            <Link to="/iletisim">İletişim sayfasından</Link> ya da <a href={`mailto:${SITE.email}`}>{SITE.email}</a> adresinden sipariş numaranla birlikte bize yaz.
+            <Link to="/iletisim">İletişim sayfasından</Link>
+            {SITE.email && (
+              <>
+                {' '}
+                ya da <a href={`mailto:${SITE.email}`}>{SITE.email}</a> adresinden
+              </>
+            )}{' '}
+            sipariş numaranla birlikte bize yaz.
           </li>
           <li>Sana anlaşmalı kargo firmasının iade kodunu gönderelim.</li>
           <li>Ürünü orijinal kutusu ve faturasıyla birlikte paketleyip kargoya ver.</li>
@@ -341,70 +377,172 @@ export function Returns() {
 
 /* ---------------- KVKK ---------------- */
 
+// Aydınlatma metni, güncel mevzuata göre (11.11.2026):
+// - 6698 sayılı Kanun md. 10 ve Aydınlatma Yükümlülüğü Tebliği: veri sorumlusu, amaç, aktarım, toplama yöntemi ve hukuki sebep, haklar
+// - 7499 sayılı Kanun (01.06.2024): yurt dışına aktarımda yeterlilik kararı / uygun güvence (md. 9)
+// - Kurul'un 18.02.2026 tarih ve 2026/347 sayılı ilke kararı (RG 24.03.2026): aydınlatma metni onay/rıza istemez,
+//   açık rıza metni ayrı başlık altında ve ayrı beyanla alınır; metin sade, makul uzunlukta ve faaliyete özgü olur
+// Genel taslaktır; yayından önce bir hukukçuya kontrol ettirilmeli.
+
+// Hangi veri, hangi amaçla, hangi hukuki sebeple (Kanun md. 5)
+const KVKK_ROWS = [
+  ['Üyelik (kayıt ve giriş)', 'Ad, soyad, e-posta, telefon (isteğe bağlı), teslimat adresi, üyelik tarihi; şifren yalnızca geri çözülemeyen özet olarak', 'Üyeliğinin oluşturulması, hesabına giriş yapabilmen ve bilgilerinin ödeme sayfasında hazır gelmesi', 'Sözleşmenin kurulması ve ifası (md. 5/2-c)'],
+  ['Sipariş ve teslimat', 'Ad, soyad, e-posta, telefon, teslimat adresi, sipariş içeriği, beden, tutar, kargo takip bilgisi', 'Siparişinin alınması, hazırlanması, teslim edilmesi; iade ve değişim işlemleri', 'Sözleşmenin kurulması ve ifası (md. 5/2-c)'],
+  ['Fatura ve yasal kayıtlar', 'Ad, soyad, adres, sipariş ve fatura bilgileri', 'Fatura düzenlenmesi, ticari defter ve belgelerin saklanması, tüketici mevzuatından doğan yükümlülükler', 'Kanunlarda açıkça öngörülmesi (md. 5/2-a) ve hukuki yükümlülük (md. 5/2-ç)'],
+  ['Kişiye özel baskı ve tasarım stüdyosu', 'Tasarımına yazdığın yazı, yüklediğin fotoğraf ve görseller', 'İstediğin tasarımın hazırlanması ve ürüne basılması', 'Sözleşmenin kurulması ve ifası (md. 5/2-c)'],
+  ['İletişim ve destek', 'Ad, e-posta, telefon, mesajının içeriği', 'Soru, talep ve şikâyetlerinin yanıtlanması', 'Meşru menfaat (md. 5/2-f); siparişle ilgiliyse sözleşmenin ifası (md. 5/2-c)'],
+  ['Site güvenliği ve zorunlu kayıtlar', 'Sepetin, favorilerin, tasarım taslağın, oturum bilgin ve çerez tercihin (tarayıcında saklanır); işlem kayıtları', 'Sitenin çalışması, güvenliğinin sağlanması, hukuka aykırı işlemlerin önlenmesi', 'Meşru menfaat (md. 5/2-f) ve hukuki yükümlülük (md. 5/2-ç)'],
+  ['Kampanya ve duyurular', 'E-posta adresi, telefon numarası', 'Kampanya, indirim ve yeni ürün duyurularının gönderilmesi', 'Açık rızan (md. 5/1) ve 6563 sayılı Kanun kapsamındaki onayın. Bu rıza aşağıdaki ayrı metinle alınır']
+]
+
 export function Kvkk() {
   return (
     <Page
       eyebrow="Yasal"
       title={<>KVKK <em>aydınlatma metni</em></>}
-      intro="6698 sayılı Kişisel Verilerin Korunması Kanunu kapsamında kişisel verilerinin nasıl işlendiğini aşağıda açıklıyoruz."
+      intro="Kişisel verilerini kimin, hangi amaçla ve hangi hukuki sebeple işlediğini, kimlere aktardığını ve haklarını burada açıklıyoruz."
     >
       <div className="prose">
-        <h2>Veri sorumlusu</h2>
-        <p>
-          Kişisel verilerin, veri sorumlusu sıfatıyla <strong>{owner()}</strong> ({SITE.address}) tarafından işlenmektedir.
+        <p className="prose__meta">
+          Son güncelleme: 11 Kasım 2026. Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu’nun (“Kanun”) 10. maddesi ve Aydınlatma Yükümlülüğünün Yerine
+          Getirilmesinde Uyulacak Usul ve Esaslar Hakkında Tebliğ uyarınca hazırlanmış bir <strong>bilgilendirmedir</strong>; senden bu metin için onay ya da rıza
+          istenmez.
         </p>
 
-        <h2>İşlenen kişisel veriler</h2>
+        <h2>1. Veri sorumlusu</h2>
+        <p>
+          Kişisel verilerin, veri sorumlusu sıfatıyla <strong>{owner()}</strong> ({SITE.address}) tarafından işlenir. Bize <Link to="/iletisim">İletişim sayfamızdan</Link>
+          {SITE.whatsapp && <> ya da {SITE.whatsapp} numaralı WhatsApp destek hattımızdan</>}
+          {SITE.email && (
+            <>
+              {' '}
+              ya da <a href={`mailto:${SITE.email}`}>{SITE.email}</a> adresinden
+            </>
+          )}{' '}
+          ulaşabilirsin.
+        </p>
+
+        <h2>2. Hangi verileri, hangi amaçla ve hangi hukuki sebeple işliyoruz?</h2>
+        <div className="prose__table" role="region" aria-label="İşlenen veriler tablosu" tabIndex={0}>
+          <table>
+            <thead>
+              <tr>
+                <th>Faaliyet</th>
+                <th>İşlenen veriler</th>
+                <th>Amaç</th>
+                <th>Hukuki sebep</th>
+              </tr>
+            </thead>
+            <tbody>
+              {KVKK_ROWS.map((row) => (
+                <tr key={row[0]}>
+                  {row.map((cell, i) => (i === 0 ? <th key={i} scope="row">{cell}</th> : <td key={i}>{cell}</td>))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
         <ul>
-          <li><strong>Kimlik:</strong> ad, soyad</li>
-          <li><strong>İletişim:</strong> e-posta adresi, telefon numarası, teslimat adresi</li>
-          <li><strong>Müşteri işlem:</strong> sipariş bilgileri, talep ve şikâyetler</li>
-          <li><strong>İşlem güvenliği:</strong> IP adresi, tarayıcı ve çerez bilgileri</li>
-          <li><strong>Pazarlama:</strong> bülten aboneliği için e-posta adresi (yalnızca izin verirsen)</li>
+          <li>
+            <strong>Kart bilgilerin tarafımızca saklanmaz.</strong> Ödeme, lisanslı ödeme kuruluşu üzerinden alınır.
+          </li>
+          <li>
+            Senden sağlık, din, biyometrik veri gibi <strong>özel nitelikli kişisel veri</strong> istemiyoruz; lütfen formlara ve tasarımlarına bu tür bilgiler yazma.
+          </li>
+          <li>Tasarımına başka birinin fotoğrafını ya da adını ekliyorsan, o kişinin bundan haberdar olduğundan ve izin verdiğinden emin ol.</li>
+          {SITE.analyticsId && <li>Analiz çerezleri yalnızca çerez bandında izin verirsen, açık rızana dayanarak çalışır.</li>}
         </ul>
-        <p>Kart bilgilerin tarafımızca saklanmaz; ödeme işlemleri lisanslı ödeme kuruluşu üzerinden yapılır.</p>
 
-        <h2>İşleme amaçları</h2>
+        <h2>3. Verilerini nasıl topluyoruz?</h2>
+        <p>
+          Kişisel verilerin; internet sitemizdeki kayıt, giriş, sipariş, iletişim ve bülten formları, tasarım stüdyosu, zorunlu tarayıcı kayıtları (çerez ve benzeri)
+          ile bize WhatsApp üzerinden yazdığında, tamamen veya kısmen otomatik yollarla, elektronik ortamda toplanır.
+        </p>
+
+        <h2>4. Verilerini kimlere, hangi amaçla aktarıyoruz?</h2>
+        <p>Kişisel verilerin Kanun’un 8. maddesine uygun olarak, yalnızca işin gerektirdiği kadarıyla şu alıcılara aktarılır:</p>
         <ul>
-          <li>Siparişlerinin alınması, hazırlanması, teslim edilmesi ve faturalandırılması</li>
-          <li>İade, değişim ve müşteri hizmetleri taleplerinin yanıtlanması</li>
-          <li>Yasal yükümlülüklerin yerine getirilmesi</li>
-          <li>Site güvenliğinin sağlanması</li>
-          <li>İzin vermen hâlinde kampanya ve yeni ürün duyurularının gönderilmesi</li>
+          <li><strong>Kargo firması:</strong> siparişinin teslim edilmesi için ad, soyad, telefon ve adresin</li>
+          <li><strong>Ödeme kuruluşu ve bankalar:</strong> ödemenin alınması ve iadesi için</li>
+          <li><strong>Mali müşavir ve e-fatura hizmet sağlayıcısı:</strong> fatura ve yasal kayıt yükümlülükleri için</li>
+          <li><strong>Barındırma ve bilişim hizmeti sağlayıcıları:</strong> sitenin işletilmesi ve verilerin güvenle saklanması için</li>
+          <li><strong>Yetkili kamu kurum ve kuruluşları:</strong> kanunen zorunlu olduğunda ve talep edildiği ölçüde</li>
         </ul>
+        <p>Verilerini satmıyor, reklam amacıyla üçüncü kişilerle paylaşmıyoruz.</p>
 
-        <h2>Hukuki sebepler ve toplama yöntemi</h2>
+        <h2>5. Yurt dışına aktarım</h2>
         <p>
-          Kişisel verilerin; internet sitemizdeki sipariş, iletişim ve bülten formları ile çerezler aracılığıyla elektronik ortamda toplanır. Bu veriler KVKK’nın 5.
-          maddesindeki sözleşmenin kurulması ve ifası, hukuki yükümlülüğün yerine getirilmesi ve meşru menfaat hukuki sebeplerine; bülten ve pazarlama iletileri
-          için ise açık rızana dayanılarak işlenir.
+          Kişisel verilerini şu an yurt dışına aktarmıyoruz. İleride yurt dışında bulunan bir hizmet sağlayıcıdan (örneğin barındırma hizmeti) yararlanırsak
+          aktarım, Kanun’un 9. maddesi uyarınca yalnızca hakkında yeterlilik kararı bulunan ülkelere ya da Kişisel Verileri Koruma Kurulu’nun ilan ettiği standart
+          sözleşme gibi uygun güvencelerden biri sağlanarak yapılır ve bu metin güncellenir.
         </p>
 
-        <h2>Aktarım</h2>
-        <p>
-          Kişisel verilerin yalnızca yukarıdaki amaçlarla sınırlı olarak; kargo firmalarına, ödeme kuruluşlarına, barındırma ve e-posta hizmeti sağlayıcılarına ve
-          talep hâlinde yetkili kamu kurumlarına aktarılabilir.
-        </p>
-
-        <h2>Haklarınız</h2>
-        <p>KVKK’nın 11. maddesi uyarınca;</p>
+        <h2>6. Verilerini ne kadar süre saklıyoruz?</h2>
         <ul>
-          <li>Kişisel verilerinin işlenip işlenmediğini öğrenme ve bilgi talep etme,</li>
-          <li>İşlenme amacını ve amacına uygun kullanılıp kullanılmadığını öğrenme,</li>
-          <li>Yurt içinde veya yurt dışında aktarıldığı üçüncü kişileri bilme,</li>
-          <li>Eksik veya yanlış işlenmişse düzeltilmesini, şartları oluştuğunda silinmesini isteme,</li>
-          <li>Otomatik sistemlerle analiz sonucu aleyhine bir sonuç çıkmasına itiraz etme,</li>
-          <li>Kanuna aykırı işleme nedeniyle zarara uğradıysan zararın giderilmesini talep etme</li>
+          <li><strong>Üyelik bilgileri:</strong> üyeliğin sürdüğü müddetçe; hesabını sildiğinde silinir.</li>
+          <li><strong>Sipariş, fatura ve ticari kayıtlar:</strong> Türk Ticaret Kanunu ve vergi mevzuatı gereği 10 yıl.</li>
+          <li><strong>Mesafeli satışa ilişkin bilgi ve belgeler:</strong> tüketici mevzuatı gereği 3 yıl.</li>
+          <li><strong>İletişim mesajları:</strong> talebinin sonuçlanmasından itibaren en fazla 2 yıl.</li>
+          <li><strong>Kampanya rızası kayıtları:</strong> rızanı geri aldığın tarihten itibaren 3 yıl.</li>
         </ul>
+        <p>Süresi dolan veriler Kanun’un 7. maddesi uyarınca silinir, yok edilir ya da anonim hâle getirilir.</p>
+
+        <h2>7. Verilerini nasıl koruyoruz?</h2>
         <p>
-          haklarına sahipsin. Taleplerini <a href={`mailto:${SITE.email}`}>{SITE.email}</a> adresine yazılı olarak iletebilirsin. Başvurun en geç 30 gün içinde
-          ücretsiz olarak sonuçlandırılır.
+          Kanun’un 12. maddesi uyarınca gerekli teknik ve idari tedbirleri alıyoruz: site bağlantısı şifrelidir (SSL), şifren geri çözülemeyen özet olarak saklanır,
+          verilerine yalnızca işi gereği yetkili kişiler erişir. Verilerini etkileyen bir ihlal olursa Kurul’a ve sana en kısa sürede bildirimde bulunuruz.
         </p>
 
-        <h2 id="cerez">Çerezler</h2>
+        <h2>8. Hakların</h2>
+        <p>Kanun’un 11. maddesi uyarınca bize başvurarak;</p>
+        <ul>
+          <li>verilerinin işlenip işlenmediğini öğrenebilir, işlenmişse bilgi isteyebilir,</li>
+          <li>işlenme amacını ve amacına uygun kullanılıp kullanılmadığını öğrenebilir,</li>
+          <li>yurt içinde ya da yurt dışında aktarıldığı üçüncü kişileri öğrenebilir,</li>
+          <li>eksik ya da yanlış işlenmişse düzeltilmesini; şartları oluşmuşsa silinmesini ya da yok edilmesini ve bu işlemlerin aktarılan kişilere bildirilmesini isteyebilir,</li>
+          <li>yalnızca otomatik sistemlerle yapılan analiz sonucunda aleyhine bir sonuç çıkmasına itiraz edebilir,</li>
+          <li>Kanun’a aykırı işleme nedeniyle zarara uğradıysan zararının giderilmesini isteyebilirsin.</li>
+        </ul>
+
+        <h2>9. Başvuru yolu</h2>
         <p>
-          Sitemiz, sepetinin hatırlanması gibi zorunlu işlevler için tarayıcında küçük veriler saklar. Analiz çerezleri yalnızca onay verirsen kullanılır.
-          Ayrıntılar <Link to="/gizlilik">Gizlilik ve Çerez Politikası</Link>’ndadır.
+          Taleplerini, Veri Sorumlusuna Başvuru Usul ve Esasları Hakkında Tebliğ’e uygun olarak; adını, soyadını, iletişim bilgini ve talebini içerecek şekilde{' '}
+          <strong>yazılı olarak</strong> yukarıdaki adresimize ya da <Reach /> iletebilirsin. Kimliğini doğrulamak için ek bilgi isteyebiliriz. Başvurun en geç{' '}
+          <strong>30 gün</strong> içinde ücretsiz olarak sonuçlandırılır; işlem ayrıca bir maliyet gerektirirse Kurul’un belirlediği tarifedeki ücret alınabilir.
+        </p>
+        <p>
+          Üyeysen bilgilerini düzeltme, kampanya rızanı geri alma ve hesabını silme işlemlerini <Link to="/hesabim">Hesabım</Link> sayfasından kendin de yapabilirsin.
+        </p>
+        <p>
+          Başvurun reddedilir, cevabı yetersiz bulursan ya da süresinde cevap verilmezse; cevabı öğrendiğin tarihten itibaren 30 gün ve her hâlde başvuru tarihinden
+          itibaren 60 gün içinde Kişisel Verileri Koruma Kurulu’na şikâyette bulunabilirsin.
+        </p>
+
+        <h2 id="cerez">10. Çerezler</h2>
+        <p>
+          Sitemiz, sepetinin ve oturumunun hatırlanması gibi zorunlu işlevler için tarayıcında küçük veriler saklar.
+          {SITE.analyticsId ? ' Analiz çerezleri yalnızca onay verirsen kullanılır.' : ' Reklam ya da takip çerezi kullanılmaz.'} Ayrıntılar{' '}
+          <Link to="/gizlilik">Gizlilik ve Çerez Politikası</Link>’ndadır.
+        </p>
+
+        <h2>11. Değişiklikler</h2>
+        <p>Faaliyetlerimiz ya da mevzuat değiştiğinde bu metni güncelleriz. Güncel metin her zaman bu sayfada yer alır.</p>
+      </div>
+
+      {/* İlke kararı gereği açık rıza metni, aydınlatma metninden ayrı başlık altında ve ayrı beyanla sunulur */}
+      <div className="prose prose--consent" id="acik-riza">
+        <h2>Ticari elektronik ileti açık rıza metni</h2>
+        <p>
+          Bu metin yukarıdaki aydınlatma metninden <strong>ayrıdır</strong>. Rıza vermek zorunlu değildir; üyelik ve alışveriş için şart koşulmaz.
+        </p>
+        <p>
+          Kayıt ya da bülten formundaki ilgili kutuyu işaretlersen; e-posta adresinin ve (verdiysen) telefon numaranın, <strong>{owner()}</strong> tarafından kampanya,
+          indirim ve yeni ürün duyurularının e-posta ve SMS yoluyla gönderilmesi amacıyla işlenmesine, 6698 sayılı Kanun’un 5/1. maddesi ve 6563 sayılı Elektronik
+          Ticaretin Düzenlenmesi Hakkında Kanun kapsamında açık rıza vermiş olursun.
+        </p>
+        <p>
+          Rızanı dilediğin zaman, hiçbir gerekçe göstermeden <Link to="/hesabim">Hesabım</Link> sayfasındaki izinler bölümünden ya da{' '}
+          <Link to="/iletisim">İletişim sayfamızdan</Link> ücretsiz olarak geri alabilirsin. Geri alma, ileriye dönük olarak sonuç doğurur.
         </p>
       </div>
     </Page>
@@ -419,7 +557,8 @@ function SellerInfo() {
       <li><strong>Unvan:</strong> {owner()}</li>
       <li><strong>Adres:</strong> {SITE.address}</li>
       {SITE.phone && <li><strong>Telefon:</strong> {SITE.phone}</li>}
-      <li><strong>E-posta:</strong> <a href={`mailto:${SITE.email}`}>{SITE.email}</a></li>
+      {SITE.email && <li><strong>E-posta:</strong> <a href={`mailto:${SITE.email}`}>{SITE.email}</a></li>}
+      {SITE.whatsapp && <li><strong>WhatsApp destek hattı:</strong> {SITE.whatsapp}</li>}
       {SITE.taxInfo && <li><strong>Vergi dairesi / no:</strong> {SITE.taxInfo}</li>}
     </ul>
   )
@@ -451,7 +590,7 @@ export function DistanceSales() {
         <h3>Cayma hakkı</h3>
         <p>
           Ürünü teslim aldığın günden itibaren 14 gün içinde hiçbir gerekçe göstermeden ve cezai şart ödemeden sözleşmeden cayabilirsin. Mağazamız bu süreyi
-          gönüllü olarak <strong>30 güne</strong> uzatmıştır. Cayma bildirimini <a href={`mailto:${SITE.email}`}>{SITE.email}</a> adresine yazılı olarak
+          gönüllü olarak <strong>30 güne</strong> uzatmıştır. Cayma bildirimini <Reach /> yazılı olarak
           iletebilirsin. Ayrıntılar <Link to="/iade">İade ve Değişim</Link> sayfasındadır.
         </p>
         <h3>Cayma hakkının kullanılamayacağı durumlar</h3>
@@ -565,6 +704,7 @@ export function Privacy() {
       <div className="prose">
         <h2>Topladığımız bilgiler</h2>
         <ul>
+          <li><strong>Üye olurken:</strong> ad, soyad, e-posta, isteğe bağlı telefon ve şifren (yalnızca geri çözülemeyen özet olarak)</li>
           <li><strong>Sipariş verirken:</strong> ad, soyad, e-posta, telefon ve teslimat adresi</li>
           <li><strong>Bize yazarken:</strong> ad, e-posta ve mesajın</li>
           <li><strong>Bültene katılırken:</strong> e-posta adresin</li>
@@ -616,7 +756,7 @@ export function Privacy() {
         <h2>Haklarınız</h2>
         <p>
           Bilgilerine erişme, düzeltme ve silinmesini isteme hakların hakkında ayrıntılı bilgi <Link to="/kvkk">KVKK Aydınlatma Metni</Link>’nde yer alır. Her
-          türlü soru için <a href={`mailto:${SITE.email}`}>{SITE.email}</a> adresine yazabilirsin.
+          türlü soru için <Reach /> yazabilirsin.
         </p>
       </div>
     </Page>

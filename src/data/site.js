@@ -5,7 +5,7 @@ export const SITE = {
   name: 'ZELA 47',
   company: '', // Resmî şirket unvanı (ör. "Ad Soyad - ZELA 47" veya "X Ltd. Şti.")
   taxInfo: '', // Vergi dairesi ve numarası
-  email: 'hasanatak.2105315@gmail.com',
+  email: '', // Sitede gösterilen iletişim e-postası. Kullanıcı isteğiyle kaldırıldı (11.11.2026); boşken iletişim formu mesajı WhatsApp ile gönderir
   phone: '', // ör. '+90 5xx xxx xx xx'
   whatsapp: '0532 565 42 88', // WhatsApp destek hattı, ör. '+90 5xx xxx xx xx'. Boşsa WhatsApp butonu gösterilmez
   address: 'Tokat Merkez, Türkiye',
@@ -24,6 +24,8 @@ export const ROUTES = {
   '/': ['ZELA 47 — Baskılı Tişört ve Eşofman', 'Kendi tasarımlarımızla baskılı tişört ve eşofmanlar, kişiye özel baskı. 1.500 ₺ üzeri ücretsiz kargo.'],
   '/hakkimizda': ['Hakkımızda', 'Kendi tasarımı baskılı tişört ve eşofmanlar üreten Tokat merkezli bir marka. Hikâyemiz ve üretim sürecimiz.'],
   '/tasarla': ['Kendin Tasarla', 'Tişörtünü ya da eşofman takımını kendin tasarla: fotoğraf, yazı ve şekil ekle, 3D önizlemede gör, sipariş ver.'],
+  '/giris': ['Giriş Yap', 'ZELA 47 hesabına giriş yap: siparişlerini takip et, bilgilerini kaydet.'],
+  '/kayit': ['Kayıt Ol', 'ZELA 47 üyesi ol: siparişlerini takip et, bilgilerin ödeme sayfasında hazır gelsin.'],
   '/iletisim': ['İletişim', 'Sipariş, kişiye özel baskı ya da iade için bize ulaş. WhatsApp destek hattı ve e-posta ile en geç bir iş günü içinde dönüyoruz.'],
   '/sss': ['Sıkça Sorulan Sorular', 'Kargo süresi, beden seçimi, kumaş ve yıkama, kişiye özel baskı, ödeme ve iade hakkında sık sorulan sorular.'],
   '/iade': ['İade ve Değişim', '30 gün içinde koşulsuz iade. İade adımları, iade edilemeyen ürünler ve değişim koşulları.'],

@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { motion, useScroll, useTransform } from 'motion/react'
 import { Logo } from './Navbar'
 import { Link, goToSection } from '../router'
-import { SITE } from '../data/site'
+import { SITE, whatsappLink } from '../data/site'
 
 const ease = [0.22, 1, 0.36, 1]
 
@@ -143,6 +143,7 @@ export function Newsletter() {
   const [sent, setSent] = useState(false)
   const [email, setEmail] = useState('')
   const [error, setError] = useState('')
+  const [consent, setConsent] = useState(false)
   return (
     <section className="section" id="bulten">
       <div className="container">
@@ -170,6 +171,7 @@ export function Newsletter() {
                 onSubmit={(e) => {
                   e.preventDefault()
                   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError('Geçerli bir e-posta adresi yaz.')
+                  if (!consent) return setError('Bültene katılmak için açık rıza kutusunu işaretlemelisin.')
                   setSent(true)
                 }}
               >
@@ -190,8 +192,22 @@ export function Newsletter() {
                 </button>
               </form>
               {error && <p className="newsletter__err" role="alert">{error}</p>}
+              <label className="check newsletter__check">
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => {
+                    setConsent(e.target.checked)
+                    setError('')
+                  }}
+                />
+                <span>
+                  <Link to="/kvkk#acik-riza">Açık Rıza Metni</Link>’ni okudum; kampanya e-postalarının tarafıma gönderilmesine açık rıza veriyorum. İstediğim an
+                  ayrılabilirim.
+                </span>
+              </label>
               <p className="newsletter__legal">
-                Katılarak kampanya e-postaları almayı kabul edersin, istediğin an ayrılabilirsin. <Link to="/gizlilik">Gizlilik</Link>
+                E-posta adresin <Link to="/kvkk">KVKK Aydınlatma Metni</Link>’nde açıklandığı şekilde işlenir.
               </p>
             </>
           )}
@@ -255,7 +271,12 @@ export function Footer() {
             <div>
               <h4>İletişim</h4>
               <Link to="/iletisim">İletişim formu</Link>
-              <a href={`mailto:${SITE.email}`}>{SITE.email}</a>
+              {SITE.email && <a href={`mailto:${SITE.email}`}>{SITE.email}</a>}
+              {whatsappLink() && (
+                <a href={whatsappLink('Merhaba, destek almak istiyorum.')} target="_blank" rel="noopener">
+                  WhatsApp destek
+                </a>
+              )}
               {SITE.instagram && (
                 <a href={SITE.instagram} target="_blank" rel="noopener noreferrer">
                   Instagram

@@ -13,7 +13,7 @@ const setTag = (selector, attrs) => {
 export function applyMeta(path) {
   const found = ROUTES[path]
   const [name, description] =
-    path === '/tesekkurler' ? ['Siparişin alındı', 'Siparişin için teşekkürler.'] : path === '/panel' ? ['Yönetim Paneli', 'ZELA 47 yönetim paneli.'] : found ?? ['Sayfa bulunamadı', 'Aradığın sayfa bulunamadı.']
+    path === '/tesekkurler' ? ['Siparişin alındı', 'Siparişin için teşekkürler.'] : path === '/panel' ? ['Yönetim Paneli', 'ZELA 47 yönetim paneli.'] : path === '/hesabim' ? ['Hesabım', 'ZELA 47 hesabın.'] : found ?? ['Sayfa bulunamadı', 'Aradığın sayfa bulunamadı.']
   const title = path === '/' ? name : `${name} — ${SITE.name}`
   const url = SITE.url + (path === '/' ? '/' : path)
 

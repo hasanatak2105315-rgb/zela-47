@@ -21,7 +21,7 @@ function seoFiles() {
       this.emitFile({
         type: 'asset',
         fileName: 'robots.txt',
-        source: `User-agent: *\nAllow: /\nDisallow: /tesekkurler\nDisallow: /panel\n\nSitemap: ${SITE.url}/sitemap.xml\n`
+        source: `User-agent: *\nAllow: /\nDisallow: /tesekkurler\nDisallow: /panel\nDisallow: /hesabim\n\nSitemap: ${SITE.url}/sitemap.xml\n`
       })
     }
   }

@@ -5,6 +5,7 @@ import Collection from './components/Collection'
 import { Marquee, Story, Features, BigBanner, Newsletter, Closing, Footer } from './components/Sections'
 import { ProductModal, CustomPrintModal, CartDrawer, Toast } from './components/Overlays'
 import Designer from './components/Designer'
+import { Login, Register, Account } from './components/Account'
 import { About, Contact, Faq, Returns, Kvkk, Privacy, Terms, DistanceSales, ThankYou, NotFound } from './components/Pages'
 import { MobileCta, CookieBanner, WhatsAppButton } from './components/Extras'
 import { usePath, navigate } from './router'
@@ -28,7 +29,10 @@ const PAGES = {
   '/gizlilik': Privacy,
   '/kullanim-kosullari': Terms,
   '/mesafeli-satis': DistanceSales,
-  '/tesekkurler': ThankYou
+  '/tesekkurler': ThankYou,
+  '/giris': Login,
+  '/kayit': Register,
+  '/hesabim': Account
 }
 
 export default function App() {

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'motion/react'
 import { useCart, FREE_SHIPPING } from '../store/cart'
 import { getSettings } from '../store/admin'
+import { useUser } from '../store/auth'
 import { useFavorites, requestFavorites } from '../store/favorites'
 import { formatPrice } from '../data/products'
 import { HeartIcon } from './Overlays'
@@ -124,6 +125,7 @@ export function Logo() {
 export default function Navbar() {
   const { count, setOpen } = useCart()
   const favCount = useFavorites().length
+  const user = useUser()
   const [scrolled, setScrolled] = useState(false)
   const [menu, setMenu] = useState(false)
 
@@ -159,6 +161,20 @@ export default function Navbar() {
           ))}
         </nav>
         <div className="nav__actions">
+          <button
+            className={`fav-nav user-nav ${user ? 'user-nav--in' : ''}`}
+            onClick={() => {
+              setMenu(false)
+              navigate(user ? '/hesabim' : '/giris')
+            }}
+            aria-label={user ? `Hesabım (${user.name})` : 'Giriş yap ya da kayıt ol'}
+            title={user ? 'Hesabım' : 'Giriş yap'}
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 21c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5" />
+            </svg>
+          </button>
           <button
             className="fav-nav"
             onClick={() => {
