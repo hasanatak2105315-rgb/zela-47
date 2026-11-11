@@ -22,11 +22,17 @@ const toTop = () => {
   window.scrollTo(0, 0)
 }
 
+// to: '/sayfa', '/sayfa?soru=1' ya da '/sayfa#bolum' (sayfa açıldıktan sonra o bölüme kaydırılır)
 export function navigate(to) {
   if (to === getPath()) return toTop()
-  window.history.pushState(null, '', to)
-  window.dispatchEvent(new Event(EVENT))
-  toTop()
+  const [path, hash] = to.split('#')
+  const same = path.split('?')[0] === getPath()
+  window.history[same ? 'replaceState' : 'pushState'](null, '', to)
+  if (!same) {
+    window.dispatchEvent(new Event(EVENT))
+    toTop()
+  }
+  if (hash) setTimeout(() => scrollToId(hash), same ? 0 : 250)
 }
 
 // Ana sayfadaki bir bölüme git (başka sayfadaysak önce ana sayfaya dön)

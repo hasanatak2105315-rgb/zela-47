@@ -6,13 +6,14 @@ import { Marquee, Story, Features, BigBanner, Newsletter, Closing, Footer } from
 import { ProductModal, CustomPrintModal, CartDrawer, Toast } from './components/Overlays'
 import Designer from './components/Designer'
 import { Login, Register, Account } from './components/Account'
+import { Track, SizeGuide, Shipping } from './components/Help'
 import { About, Contact, Faq, Returns, Kvkk, Privacy, Terms, DistanceSales, ThankYou, NotFound } from './components/Pages'
 import { MobileCta, CookieBanner, WhatsAppButton } from './components/Extras'
 import { usePath, navigate } from './router'
 import { DESIGN_PRODUCTS } from './data/designer'
 import { applyMeta } from './meta'
 import { CartProvider } from './store/cart'
-import { startSmoothScroll } from './scroll'
+import { startSmoothScroll, scrollToId } from './scroll'
 
 // 3D kodu ana dosyadan ayrı, sonradan yüklenir
 // Yönetim paneli yalnızca /panel açılınca indirilir
@@ -32,7 +33,10 @@ const PAGES = {
   '/tesekkurler': ThankYou,
   '/giris': Login,
   '/kayit': Register,
-  '/hesabim': Account
+  '/hesabim': Account,
+  '/siparis-takibi': Track,
+  '/beden-rehberi': SizeGuide,
+  '/kargo': Shipping
 }
 
 export default function App() {
@@ -42,6 +46,13 @@ export default function App() {
   const [customFor, setCustomFor] = useState(null)
 
   useEffect(() => startSmoothScroll(), [])
+  // Adres bir bölümü gösteriyorsa (ör. /kvkk#acik-riza) sayfa açılınca oraya kaydır
+  useEffect(() => {
+    const id = window.location.hash.slice(1)
+    if (!id || window.location.pathname === '/panel') return
+    const t = setTimeout(() => scrollToId(id), 600)
+    return () => clearTimeout(t)
+  }, [])
   useEffect(() => applyMeta(path), [path])
 
   const closeModal = useCallback(() => setSelected(null), [])

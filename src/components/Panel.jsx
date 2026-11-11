@@ -301,7 +301,7 @@ function OrderRows({ orders, onOpen }) {
 
 function exportCsv(orders) {
   const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`
-  const head = ['Sipariş no', 'Tarih', 'Durum', 'Müşteri', 'E-posta', 'Telefon', 'Adres', 'Ürünler', 'Ara toplam', 'Kargo', 'Toplam', 'Kargo takip', 'Not']
+  const head = ['Sipariş no', 'Tarih', 'Durum', 'Müşteri', 'E-posta', 'Telefon', 'Adres', 'Ürünler', 'Ara toplam', 'İndirim kodu', 'İndirim', 'Kargo', 'Toplam', 'Kargo takip', 'Not']
   const rows = orders.map((o) => [
     o.no,
     new Date(o.date).toLocaleString('tr-TR'),
@@ -312,6 +312,8 @@ function exportCsv(orders) {
     o.customer?.address,
     o.items.map((i) => `${i.qty}x ${i.name}${i.size ? ' ' + i.size : ''}${i.color ? ' ' + i.color : ''}${i.custom ? ' (özel baskı: ' + i.custom.text + ')' : ''}`).join(' | '),
     o.subtotal,
+    o.coupon,
+    o.discount,
     o.shipping,
     o.total,
     o.tracking,
@@ -453,6 +455,12 @@ function OrderDrawer({ order, onClose, onChange, onDelete }) {
           <div className="adm-sum">
             <span>Ara toplam</span>
             <span>{formatPrice(order.subtotal ?? order.total)}</span>
+            {order.discount > 0 && (
+              <>
+                <span>İndirim ({order.coupon})</span>
+                <span>−{formatPrice(order.discount)}</span>
+              </>
+            )}
             <span>Kargo</span>
             <span>{order.shipping ? formatPrice(order.shipping) : 'Ücretsiz'}</span>
             <b>Toplam</b>
@@ -692,7 +700,8 @@ function Settings({ onReset }) {
     ...Object.fromEntries(CONTACT.map(([k]) => [k, typeof saved[k] === 'string' ? saved[k] : SITE[k] ?? ''])),
     shippingFee: saved.shippingFee ?? SHIPPING_FEE,
     freeShipping: saved.freeShipping ?? FREE_SHIPPING,
-    notices: [0, 1, 2].map((i) => (saved.notices ?? DEFAULT_NOTICES)[i] ?? '')
+    notices: [0, 1, 2].map((i) => (saved.notices ?? DEFAULT_NOTICES)[i] ?? ''),
+    coupons: admin.getCoupons().map((c) => ({ ...c }))
   }))
   const [msg, setMsg] = useState('')
   const [error, setError] = useState('')
@@ -707,12 +716,18 @@ function Settings({ onReset }) {
     if (f.email && !/^\S+@\S+\.\S+$/.test(f.email)) return setError('E-posta adresi geçerli görünmüyor.')
     if (f.instagram && !/^https?:\/\//.test(f.instagram)) return setError('Instagram adresi https:// ile başlamalı (ör. https://instagram.com/zela47).')
     if (!(Number(f.shippingFee) >= 0) || !(Number(f.freeShipping) >= 0)) return setError('Kargo tutarları 0 ya da daha büyük olmalı.')
+    const coupons = f.coupons.map((c) => ({ ...c, code: admin.normCode(c.code), percent: Math.round(Number(c.percent)), min: Math.max(0, Math.round(Number(c.min) || 0)) }))
+    if (coupons.some((c) => !c.code)) return setError('İndirim kodlarından birinin adı boş.')
+    if (coupons.some((c) => !(c.percent >= 1 && c.percent <= 90))) return setError('İndirim yüzdesi 1 ile 90 arasında olmalı.')
+    if (new Set(coupons.map((c) => c.code)).size !== coupons.length) return setError('Aynı indirim kodu iki kez yazılmış.')
     admin.setSettings({
       ...Object.fromEntries(CONTACT.map(([k]) => [k, f[k].trim()])),
       shippingFee: Math.round(Number(f.shippingFee)),
       freeShipping: Math.round(Number(f.freeShipping)),
-      notices: f.notices.map((t) => t.trim())
+      notices: f.notices.map((t) => t.trim()),
+      coupons
     })
+    setF((x) => ({ ...x, coupons }))
     setMsg('Kaydedildi. Siteyi yenileyince değişiklikler görünür.')
   }
 
@@ -757,6 +772,43 @@ function Settings({ onReset }) {
             <input type="number" min="0" inputMode="numeric" value={f.freeShipping} onChange={(e) => set('freeShipping', e.target.value)} />
           </label>
         </div>
+        <h3>İndirim kodları</h3>
+        <p className="muted adm-help">Müşteri kodu sepette yazar. "Tek kullanım" işaretliyse aynı e-posta kodu yalnızca bir kez kullanabilir; ilk böyle kod bülten ve üyelik sayfalarında "hoş geldin" kodu olarak gösterilir.</p>
+        <ul className="adm-coupons">
+          {f.coupons.map((c, i) => {
+            const upd = (values) => set('coupons', f.coupons.map((x, j) => (j === i ? { ...x, ...values } : x)))
+            return (
+              <li key={i}>
+                <label className="field">
+                  <span>Kod</span>
+                  <input value={c.code} onChange={(e) => upd({ code: e.target.value.toUpperCase() })} maxLength={20} />
+                </label>
+                <label className="field">
+                  <span>İndirim %</span>
+                  <input type="number" min="1" max="90" inputMode="numeric" value={c.percent} onChange={(e) => upd({ percent: e.target.value })} />
+                </label>
+                <label className="field">
+                  <span>En az sepet (₺)</span>
+                  <input type="number" min="0" inputMode="numeric" value={c.min ?? 0} onChange={(e) => upd({ min: e.target.value })} />
+                </label>
+                <label className="adm-check">
+                  <input type="checkbox" checked={!!c.once} onChange={(e) => upd({ once: e.target.checked })} /> Tek kullanım
+                </label>
+                <label className="adm-check">
+                  <input type="checkbox" checked={!!c.active} onChange={(e) => upd({ active: e.target.checked })} /> Aktif
+                </label>
+                <button type="button" className="adm-mini adm-mini--danger" onClick={() => set('coupons', f.coupons.filter((_, j) => j !== i))}>
+                  Sil
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+        {f.coupons.length < 10 && (
+          <button type="button" className="adm-ghost" onClick={() => set('coupons', [...f.coupons, { code: '', percent: 10, min: 0, once: false, active: true }])}>
+            + Kod ekle
+          </button>
+        )}
         <h3>Üstteki duyuru bandı</h3>
         <p className="muted adm-help">Sitenin en üstündeki kırmızı bantta sırayla dönen yazılar. Boş satır gösterilmez.</p>
         <div className="adm-form">

@@ -108,6 +108,9 @@ function Topbar() {
       <motion.span key={i} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
         {NOTICES[i]}
       </motion.span>
+      <a className="topbar__link" href="/siparis-takibi" onClick={(e) => (e.preventDefault(), navigate('/siparis-takibi'))}>
+        Sipariş Takibi
+      </a>
     </div>
   )
 }
@@ -159,6 +162,9 @@ export default function Navbar() {
               {label}
             </button>
           ))}
+          <button className="nav__auth" onClick={() => go('/siparis-takibi')}>
+            Sipariş Takibi
+          </button>
           {/* Telefon menüsünde üyelik bağlantıları (bilgisayarda sağdaki butonlar var) */}
           {user ? (
             <button className="nav__auth" onClick={() => go('/hesabim')}>

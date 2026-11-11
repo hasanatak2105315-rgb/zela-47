@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
-import { CATEGORIES, PRODUCTS, formatPrice, withColor, discount } from '../data/products'
-import { useCart } from '../store/cart'
+import { CATEGORIES, PRODUCTS, formatPrice, withColor, discount, soldOut } from '../data/products'
+import { useCart, FREE_SHIPPING } from '../store/cart'
 import { PenIcon, FavoriteButton } from './Overlays'
 import { useFavorites, useFavoritesRequest, takeFavoritesRequest } from '../store/favorites'
 
@@ -51,7 +51,11 @@ function ProductCard({ product: base, index, shown, onOpen, onCustom }) {
     >
       <button className="card__stage" onClick={() => onOpen(product)} aria-label={`${product.name} detay`}>
         <span className="card__index">{String(index + 1).padStart(2, '0')}</span>
-        {product.tag && <span className="card__tag">{product.tag}</span>}
+        {product.sizes?.every((sz) => soldOut(product, sz)) ? (
+          <span className="card__tag card__tag--out">Tükendi</span>
+        ) : (
+          product.tag && <span className="card__tag">{product.tag}</span>
+        )}
         <Suspense fallback={<div className="stage-loader" aria-hidden="true" />}>
           <CardView className="card__view" product={product} hovered={hovered} visible={shown} />
         </Suspense>
@@ -66,6 +70,7 @@ function ProductCard({ product: base, index, shown, onOpen, onCustom }) {
             {product.oldPrice && <s>{formatPrice(product.oldPrice)}</s>}
             {off > 0 && <em className="price__off">%{off}</em>}
           </div>
+          {product.price >= FREE_SHIPPING && <span className="card__ship">Ücretsiz kargo</span>}
           {base.colors && (
             <div className="swatches" role="radiogroup" aria-label={`${base.name} rengi`}>
               {base.colors.map(([label, hex]) => (

@@ -818,6 +818,11 @@ export function ThankYou() {
         <p className="muted">Sorun mu var? Sipariş numaranla bize yaz.</p>
         <div className="hero__cta">
           <Link className="btn btn--primary" to="/">Alışverişe Devam Et</Link>
+          {order && (
+            <Link className="btn btn--ghost" to={`/siparis-takibi?no=${order.no}&eposta=${encodeURIComponent(order.email)}`}>
+              Siparişimi Takip Et
+            </Link>
+          )}
           <Link className="btn btn--ghost" to="/iletisim">Bize Yaz</Link>
         </div>
       </Reveal>

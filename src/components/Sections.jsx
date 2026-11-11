@@ -3,6 +3,9 @@ import { motion, useScroll, useTransform } from 'motion/react'
 import { Logo } from './Navbar'
 import { Link, goToSection } from '../router'
 import { SITE, whatsappLink } from '../data/site'
+import { welcomeCoupon } from '../store/admin'
+import { FREE_SHIPPING } from '../store/cart'
+import { formatPrice } from '../data/products'
 
 const ease = [0.22, 1, 0.36, 1]
 
@@ -84,7 +87,7 @@ export function Story() {
 const FEATURES = [
   {
     title: 'Hızlı Teslimat',
-    text: 'Stoktaki ürünler 1–3 iş gününde kargoda, hepsi hediye kutusunda. 1.500 ₺ üzeri kargo bizden.',
+    text: `Stoktaki ürünler 1–3 iş gününde kargoda, hepsi hediye kutusunda. ${formatPrice(FREE_SHIPPING)} üzeri kargo bizden.`,
     icon: <path d="M3 7h11v9H3zM14 10h4l3 3v3h-7M7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM17 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
   },
   {
@@ -162,7 +165,15 @@ export function Newsletter() {
           </h2>
           <p className="muted">Yeni seriler, sınırlı üretimler ve özel kampanyalar önce bülten üyelerine.</p>
           {sent ? (
-            <p className="newsletter__ok">✓ Kaydın alındı. Aramıza hoş geldin.</p>
+            <p className="newsletter__ok">
+              ✓ Kaydın alındı. Aramıza hoş geldin.
+              {welcomeCoupon() && (
+                <>
+                  {' '}
+                  İlk siparişinde %{welcomeCoupon().percent} indirim için sepette şu kodu yaz: <b className="code">{welcomeCoupon().code}</b>
+                </>
+              )}
+            </p>
           ) : (
             <>
               <form
@@ -260,13 +271,21 @@ export function Footer() {
             <div>
               <h4>Mağaza</h4>
               <button onClick={() => goToSection('koleksiyon')}>Koleksiyon</button>
+              <Link to="/tasarla">Kendin tasarla</Link>
               <Link to="/hakkimizda">Hakkımızda</Link>
+            </div>
+            <div>
+              <h4>Hesabım</h4>
+              <Link to="/hesabim">Hesabım</Link>
+              <Link to="/siparis-takibi">Sipariş takibi</Link>
+              <Link to="/kayit">Kayıt ol</Link>
             </div>
             <div>
               <h4>Yardım</h4>
               <Link to="/sss">Sıkça sorulanlar</Link>
+              <Link to="/kargo">Kargo ve teslimat</Link>
               <Link to="/iade">İade ve değişim</Link>
-              <Link to="/kvkk">KVKK</Link>
+              <Link to="/beden-rehberi">Beden rehberi</Link>
             </div>
             <div>
               <h4>İletişim</h4>
@@ -291,7 +310,7 @@ export function Footer() {
         <div className="footer__bottom">
           <span>© {new Date().getFullYear()} ZELA 47. Tüm hakları saklıdır.</span>
           <span>
-            <Link to="/kvkk">KVKK</Link> · <Link to="/gizlilik">Gizlilik ve Çerezler</Link> · <Link to="/kullanim-kosullari">Kullanım Koşulları</Link> ·{' '}
+            <Link to="/kvkk">KVKK</Link> · <Link to="/kvkk#acik-riza">Ticari İleti İzni</Link> · <Link to="/gizlilik">Gizlilik ve Çerezler</Link> · <Link to="/kullanim-kosullari">Kullanım Koşulları</Link> ·{' '}
             <Link to="/mesafeli-satis">Mesafeli Satış Sözleşmesi</Link>
           </span>
         </div>

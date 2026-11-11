@@ -71,6 +71,30 @@ export const setProductEdits = (edits) => writeStore(KEYS.products, edits)
 export const getSettings = () => readStore(KEYS.settings, {})
 export const setSettings = (s) => writeStore(KEYS.settings, s)
 
+/* ---------- İndirim kodları ---------- */
+
+// { code, percent, min (en az sepet tutarı), once (kişi başı tek kullanım), active }
+// Panelden (Ayarlar > İndirim kodları) değiştirilebilir
+export const DEFAULT_COUPONS = [{ code: 'HOSGELDIN10', percent: 10, min: 0, once: true, active: true }]
+export const getCoupons = () => {
+  const list = getSettings().coupons
+  return Array.isArray(list) ? list : DEFAULT_COUPONS
+}
+export const normCode = (code) => code.trim().toUpperCase().replace(/İ/g, 'I').replace(/\s+/g, '')
+// Bu e-posta bu kodu daha önce (iptal edilmemiş bir siparişte) kullandı mı?
+export const couponUsed = (code, email) =>
+  !!email && getOrders().some((o) => o.coupon === code && o.status !== 'cancelled' && o.customer?.email?.toLowerCase() === email.trim().toLowerCase())
+// Kod geçerliyse { coupon }, değilse { error }
+export function checkCoupon(code, amount, email) {
+  const coupon = getCoupons().find((c) => c.active && c.code === normCode(code))
+  if (!coupon) return { error: 'Bu indirim kodu geçerli değil.' }
+  if (amount < (coupon.min ?? 0)) return { error: `Bu kod ${coupon.min} ₺ ve üzeri sepetlerde geçerli.` }
+  if (coupon.once && couponUsed(coupon.code, email)) return { error: 'Bu kodu daha önce kullandın.' }
+  return { coupon }
+}
+// İlk sipariş / hoş geldin kodu (bülten ve üyelik sayfalarında gösterilir)
+export const welcomeCoupon = () => getCoupons().find((c) => c.active && c.once) ?? null
+
 /* ---------- Panel girişi (e-posta + şifre) ---------- */
 
 // Şifre kodda düz yazı olarak durmaz: e-posta ve şifreden PBKDF2 (SHA-256, 210.000 tur) ile

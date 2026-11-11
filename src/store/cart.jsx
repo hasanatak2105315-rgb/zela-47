@@ -1,9 +1,11 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { PRODUCTS } from '../data/products'
-import { getSettings } from './admin'
+import { getSettings, checkCoupon, readStore, writeStore } from './admin'
+import { currentUser } from './auth'
 
 const CartContext = createContext(null)
 const KEY = 'tx-cart'
+const COUPON = 'zela-coupon'
 
 // Sepet satırı: aynı ürün farklı beden, renk ya da kişiye özel baskıyla ayrı satırda durur
 // Tasarım stüdyosundan gelen her tasarımın kendi kimliği (custom.id) vardır, ayrı satırda durur
@@ -31,6 +33,8 @@ export function CartProvider({ children }) {
   const [items, setItems] = useState(load)
   const [open, setOpen] = useState(false)
   const [toast, setToast] = useState(null)
+  // Uygulanan indirim kodu (sayfa yenilense de kalır)
+  const [code, setCode] = useState(() => readStore(COUPON, null))
 
   useEffect(() => {
     try {
@@ -47,7 +51,11 @@ export function CartProvider({ children }) {
   const value = useMemo(() => {
     const lines = items.map((i) => ({ ...i, product: PRODUCTS.find((p) => p.id === i.id) }))
     const subtotal = lines.reduce((s, l) => s + unitPrice(l.product, l.custom) * l.qty, 0)
-    const shipping = subtotal === 0 || subtotal >= FREE_SHIPPING ? 0 : SHIPPING_FEE
+    // Kod her hesapta yeniden kontrol edilir: sepet küçülünce ya da kod panelden kapatılınca indirim düşer
+    const coupon = code && subtotal > 0 ? checkCoupon(code, subtotal, currentUser()?.email).coupon ?? null : null
+    const discount = coupon ? Math.round((subtotal * coupon.percent) / 100) : 0
+    // Ücretsiz kargo sınırı indirimden sonraki tutara göre
+    const shipping = subtotal === 0 || subtotal - discount >= FREE_SHIPPING ? 0 : SHIPPING_FEE
     return {
       lines,
       open,
@@ -55,7 +63,21 @@ export function CartProvider({ children }) {
       count: items.reduce((s, i) => s + i.qty, 0),
       subtotal,
       shipping,
-      total: subtotal + shipping,
+      coupon,
+      discount,
+      total: subtotal - discount + shipping,
+      // Hata varsa mesajı, yoksa null döner
+      applyCoupon(input) {
+        const res = checkCoupon(input, subtotal, currentUser()?.email)
+        if (res.error) return res.error
+        setCode(res.coupon.code)
+        writeStore(COUPON, res.coupon.code)
+        return null
+      },
+      removeCoupon() {
+        setCode(null)
+        writeStore(COUPON, null)
+      },
       setOpen,
       // opts: { size, color (renk adı), custom: { text, place, id?, previews? } }
       add(id, qty = 1, { size, color, custom } = {}) {
@@ -69,9 +91,13 @@ export function CartProvider({ children }) {
       setQty(key, qty) {
         setItems((prev) => (qty <= 0 ? prev.filter((i) => i.key !== key) : prev.map((i) => (i.key === key ? { ...i, qty } : i))))
       },
-      clear: () => setItems([])
+      clear() {
+        setItems([])
+        setCode(null)
+        writeStore(COUPON, null)
+      }
     }
-  }, [items, open, toast])
+  }, [items, open, toast, code])
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>
 }

@@ -84,7 +84,7 @@ const subscribe = (fn) => {
 export const useBody = () => useSyncExternalStore(subscribe, getBody)
 
 // Örnek beden tablosu: üstlerde göğüs, altlarda kalça çevresine göre (cm, üst sınırlar)
-const TABLES = {
+export const SIZE_TABLES = {
   female: {
     tops: [['S', 88], ['M', 94], ['L', 100], ['XL', 106], ['XXL', Infinity]],
     bottoms: [['S', 96], ['M', 102], ['L', 108], ['XL', 114], ['XXL', Infinity]],
@@ -97,7 +97,7 @@ const TABLES = {
   }
 }
 const pick = (table, v) => table.find(([, max]) => v <= max)[0]
-const tableOf = (b) => TABLES[b.gender] ?? TABLES.female
+const tableOf = (b) => SIZE_TABLES[b.gender] ?? SIZE_TABLES.female
 
 export const topSize = (b) => pick(tableOf(b).tops, b.chest)
 export const bottomSize = (b) => pick(tableOf(b).bottoms, Math.max(b.hip, b.waist + tableOf(b).waistGap))

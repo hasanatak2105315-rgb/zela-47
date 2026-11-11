@@ -3,7 +3,7 @@ import { Page, Reveal } from './Pages'
 import { Link, navigate } from '../router'
 import { formatPrice } from '../data/products'
 import { whatsappLink } from '../data/site'
-import { getOrders, statusLabel } from '../store/admin'
+import { getOrders, statusLabel, welcomeCoupon, couponUsed } from '../store/admin'
 import { useUser, register, login, logout, updateProfile, changePassword, deleteAccount } from '../store/auth'
 
 // Üyelik sayfaları: Giriş (/giris), Kayıt (/kayit), Hesabım (/hesabim).
@@ -359,6 +359,13 @@ export function Account() {
     <Page eyebrow="Hesabım" title={<>Merhaba, <em>{user.name.split(' ')[0]}</em></>} intro={`${dateFmt.format(new Date(user.createdAt))} tarihinden beri üyesin.`}>
       <div className="account">
         <div className="account__col">
+          {welcomeCoupon() && !couponUsed(welcomeCoupon().code, user.email) && (
+            <div className="account__coupon">
+              <small>Hoş geldin indirimin</small>
+              <strong className="code">{welcomeCoupon().code}</strong>
+              <span>İlk siparişinde %{welcomeCoupon().percent} indirim. Kodu sepette “İndirim kodu” alanına yaz.</span>
+            </div>
+          )}
           <Orders user={user} />
           <Privacy user={user} />
         </div>

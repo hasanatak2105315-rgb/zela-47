@@ -2,7 +2,7 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useCart, FREE_SHIPPING, CUSTOM_PRINT_FEE, unitPrice } from '../store/cart'
 import { formatPrice, withColor, discount, soldOut } from '../data/products'
-import { saveOrder } from '../store/admin'
+import { saveOrder, couponUsed } from '../store/admin'
 import { currentUser } from '../store/auth'
 import { lockScroll } from '../scroll'
 import { navigate } from '../router'
@@ -13,6 +13,17 @@ import { useBody, recommendedSize } from '../store/body'
 const ProductStage = lazy(() => import('../three/ProductViews').then((m) => ({ default: m.ProductStage })))
 
 const ease = [0.22, 1, 0.36, 1]
+
+// Bugünden itibaren n iş günü sonrası (hafta sonu sayılmaz), "14 Kasım Cuma" biçiminde
+const dayFmt = new Intl.DateTimeFormat('tr-TR', { day: 'numeric', month: 'long', weekday: 'long' })
+function businessDay(n) {
+  const d = new Date()
+  while (n > 0) {
+    d.setDate(d.getDate() + 1)
+    if (d.getDay() !== 0 && d.getDay() !== 6) n--
+  }
+  return dayFmt.format(d)
+}
 
 function useEscape(active, fn) {
   useEffect(() => {
@@ -50,6 +61,9 @@ export function SizePicker({ product, value, onChange, error }) {
         ))}
       </div>
       {error && <small role="alert">Önce bedenini seç.</small>}
+      <a className="sizes__guide" href="/beden-rehberi" target="_blank" rel="noopener">
+        Beden rehberi
+      </a>
     </div>
   )
 }
@@ -164,6 +178,15 @@ export function ProductModal({ product, onClose, onCustom }) {
                 {off > 0 && <em className="price__off">%{off} indirim</em>}
               </div>
               <p className="muted">{product.desc}</p>
+              <p className="modal__ship">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 7h11v9H3zM14 10h4l3 3v3h-7M7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM17 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" />
+                </svg>
+                <span>
+                  Bugün sipariş verirsen en geç <b>{businessDay(3)}</b> günü kargoda.
+                  {product.price >= FREE_SHIPPING ? ' Kargo ücretsiz.' : ` ${formatPrice(FREE_SHIPPING)} üzeri kargo ücretsiz.`}
+                </span>
+              </p>
               <ul className="specs">
                 {product.specs.map((s) => (
                   <li key={s}>{s}</li>
@@ -368,7 +391,7 @@ function checkoutErrors(f) {
 }
 
 function Checkout({ total, onBack, onDone }) {
-  const { lines, subtotal, shipping } = useCart()
+  const { lines, subtotal, shipping, coupon, discount, removeCoupon } = useCart()
   // Üye giriş yaptıysa bilgileri hazır gelir
   const [f, setF] = useState(() => {
     const u = currentUser()
@@ -406,6 +429,12 @@ function Checkout({ total, onBack, onDone }) {
       e.currentTarget.querySelector(`[name="${Object.keys(found)[0]}"]`)?.focus()
       return
     }
+    // Tek kullanımlık kod, formdaki e-postayla daha önce kullanıldıysa sipariş tamamlanmaz
+    if (coupon?.once && couponUsed(coupon.code, f.email)) {
+      removeCoupon()
+      setErrors({ email: `${coupon.code} kodunu bu e-postayla daha önce kullandın; indirim sepetten kaldırıldı. Tutarı kontrol edip tekrar onayla.` })
+      return
+    }
     setBusy(true)
     // Demo: gerçek ödeme yerine kısa bir bekleme
     setTimeout(() => {
@@ -422,7 +451,9 @@ function Checkout({ total, onBack, onDone }) {
         customer: { name: `${f.name.trim()} ${f.surname.trim()}`, email: f.email.trim(), phone: f.phone.trim(), address: f.address.trim() },
         items: lines.map((l) => ({ id: l.id, name: l.product.name, size: l.size, color: l.color, qty: l.qty, unit: unitPrice(l.product, l.custom), custom: l.custom })),
         subtotal,
-        shipping
+        shipping,
+        coupon: coupon?.code,
+        discount
       })
       onDone()
       navigate('/tesekkurler')
@@ -476,8 +507,52 @@ function Checkout({ total, onBack, onDone }) {
   )
 }
 
+// Sepette indirim kodu: yazılır, uygulanır; uygulanınca kod ve kaldır butonu görünür
+function CouponBox() {
+  const { coupon, applyCoupon, removeCoupon } = useCart()
+  const [code, setCode] = useState('')
+  const [error, setError] = useState('')
+  if (coupon)
+    return (
+      <div className="coupon coupon--on">
+        <span>
+          <b>{coupon.code}</b> uygulandı · %{coupon.percent} indirim
+        </span>
+        <button type="button" onClick={removeCoupon}>
+          Kaldır
+        </button>
+      </div>
+    )
+  return (
+    <form
+      className="coupon"
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (!code.trim()) return
+        const err = applyCoupon(code)
+        setError(err ?? '')
+        if (!err) setCode('')
+      }}
+    >
+      <input
+        value={code}
+        onChange={(e) => {
+          setCode(e.target.value)
+          setError('')
+        }}
+        placeholder="İndirim kodu"
+        aria-label="İndirim kodu"
+        aria-invalid={!!error}
+        autoComplete="off"
+      />
+      <button type="submit">Uygula</button>
+      {error && <small role="alert">{error}</small>}
+    </form>
+  )
+}
+
 export function CartDrawer() {
-  const { open, setOpen, lines, subtotal, shipping, total, setQty, clear } = useCart()
+  const { open, setOpen, lines, subtotal, shipping, total, discount, coupon, setQty, clear } = useCart()
   const [step, setStep] = useState('cart')
   const close = () => setOpen(false)
   useEscape(open, close)
@@ -485,7 +560,7 @@ export function CartDrawer() {
     if (!open) setStep('cart')
   }, [open])
 
-  const left = FREE_SHIPPING - subtotal
+  const left = FREE_SHIPPING - (subtotal - discount)
 
   return (
     <AnimatePresence>
@@ -563,18 +638,25 @@ export function CartDrawer() {
                   {subtotal > 0 && (
                     <div className="ship">
                       <div className="ship__bar">
-                        <span style={{ transform: `scaleX(${Math.min(subtotal / FREE_SHIPPING, 1)})` }} />
+                        <span style={{ transform: `scaleX(${Math.min((subtotal - discount) / FREE_SHIPPING, 1)})` }} />
                       </div>
                       <small className="muted">
                         {left > 0 ? `Ücretsiz kargo için ${formatPrice(left)} daha ekle` : 'Kargo bizden 🎉'}
                       </small>
                     </div>
                   )}
+                  {subtotal > 0 && <CouponBox />}
                   <div className="totals">
                     <div>
                       <span>Ara toplam</span>
                       <span>{formatPrice(subtotal)}</span>
                     </div>
+                    {discount > 0 && (
+                      <div className="totals__off">
+                        <span>İndirim ({coupon.code})</span>
+                        <span>−{formatPrice(discount)}</span>
+                      </div>
+                    )}
                     <div>
                       <span>Kargo</span>
                       <span>{shipping ? formatPrice(shipping) : 'Ücretsiz'}</span>
