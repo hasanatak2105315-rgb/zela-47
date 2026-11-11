@@ -159,8 +159,28 @@ export default function Navbar() {
               {label}
             </button>
           ))}
+          {/* Telefon menüsünde üyelik bağlantıları (bilgisayarda sağdaki butonlar var) */}
+          {user ? (
+            <button className="nav__auth" onClick={() => go('/hesabim')}>
+              Hesabım
+            </button>
+          ) : (
+            <>
+              <button className="nav__auth nav__auth--main" onClick={() => go('/kayit')}>
+                Kayıt Ol
+              </button>
+              <button className="nav__auth" onClick={() => go('/giris')}>
+                Giriş Yap
+              </button>
+            </>
+          )}
         </nav>
         <div className="nav__actions">
+          {!user && (
+            <button className="signup-btn" onClick={() => go('/kayit')}>
+              Kayıt Ol
+            </button>
+          )}
           <button
             className={`fav-nav user-nav ${user ? 'user-nav--in' : ''}`}
             onClick={() => {
